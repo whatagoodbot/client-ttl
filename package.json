@@ -1,6 +1,6 @@
 {
   "name": "goodbot-ttl",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A bot to interact with users in chat on tt.live",
   "main": "src/index.js",
   "type": "module",
