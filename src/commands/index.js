@@ -12,6 +12,8 @@ import yt from './youtube.js'
 import { addGreeting } from './greetings.js'
 import { respond, addResponse, getResponses } from './responses.js'
 
+import { up, down } from './beDJ.js'
+
 const commands = {
   addgreeting: async (options) => {
     options.type = 'text'
@@ -109,43 +111,62 @@ const commands = {
   },
   qt,
   weather,
-  yt
+  yt,
+  up,
+  down
 }
 
 const getcommands = () => { return Object.keys(commands) }
 
-export const findCommandsInMessage = async (message, roomProfile, sender) => {
+export const findCommandsInMessage = async (message, roomProfile, sender, socket) => {
   const botConfig = await configDb.get('whatAGoodBot')
   if (!roomProfile.uuid) return
-  if (message && message.length > 1 && message?.substring(0, 1) === botConfig.commandIdentifier) {
-    const options = {
-      roomId: roomProfile.uuid,
-      message: ''
-    }
+  if (message && message.length > 1) {
+    if (message?.substring(0, 1) === botConfig.commandIdentifier) {
+      const options = {
+        roomId: roomProfile.uuid,
+        message: ''
+      }
 
-    const separatorPosition = message.indexOf(' ') > 0 ? message.indexOf(' ') : message.length
-    const command = message?.substring(1, separatorPosition)
-    let argument
-    if (separatorPosition > 0) {
-      argument = message?.substring(separatorPosition + 1)
-    }
-    if (argument) argument = argument.split(' ')
-    const response = await (getcommands().includes(command) ? commands[command] : respond)({
-      command,
-      argument,
-      botConfig,
-      roomProfile,
-      sender
-    })
-    if (!response) return
-    if (response?.dontRespond) return
-    if (response?.messages) {
-      response.messages.forEach(message => {
-        postMessage({ roomId: roomProfile.uuid, message })
+      const separatorPosition = message.indexOf(' ') > 0 ? message.indexOf(' ') : message.length
+      const command = message?.substring(1, separatorPosition)
+      let argument
+      if (separatorPosition > 0) {
+        argument = message?.substring(separatorPosition + 1)
+      }
+      if (argument) argument = argument.split(' ')
+      const response = await (getcommands().includes(command) ? commands[command] : respond)({
+        command,
+        argument,
+        botConfig,
+        roomProfile,
+        sender,
+        socket
       })
-    } else {
-      const replyPayload = { ...options, ...response }
-      postMessage(replyPayload)
+      if (!response) return
+      if (response?.dontRespond) return
+      if (response?.messages) {
+        response.messages.forEach(message => {
+          postMessage({ roomId: roomProfile.uuid, message })
+        })
+      } else {
+        const replyPayload = { ...options, ...response }
+        postMessage(replyPayload)
+      }
+    }
+    if (message.indexOf('bot') > 0) {
+      const botSentientNames = [
+        'botSentient1',
+        'botSentient2',
+        'botSentient3',
+        'botSentient4',
+        'botSentient5'
+      ]
+      const botSentients = await stringsDb.getMany(botSentientNames)
+      const botSentientString = botSentientNames[Math.floor(Math.random() * botSentientNames.length)]
+      const randombotSentient = botSentients[botSentientString]
+
+      postMessage({ roomId: roomProfile.uuid, message: randombotSentient })
     }
   }
 }
