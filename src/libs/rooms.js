@@ -18,10 +18,6 @@ export const connectToRoom = async (roomConfig, defaultLastfmInstance) => {
   const roomProfile = await getRoom(roomConfig.slug)
   await joinRoom(roomProfile.uuid)
   lastMessageIDs[roomProfile.uuid] = {}
-  const repeatedTasks = new Chain()
-  repeatedTasks
-    .add(() => processNewMessages(roomProfile))
-    .every(500)
 
   const socket = io(`https://${roomProfile.socketDomain}`, {
     path: roomProfile.socketPath,
@@ -36,6 +32,12 @@ export const connectToRoom = async (roomConfig, defaultLastfmInstance) => {
     reconnectionDelay: 5000,
     reconnection: true
   })
+
+  const repeatedTasks = new Chain()
+  repeatedTasks
+    .add(() => processNewMessages(roomProfile, socket))
+    .every(500)
+
   let roomLastfmInstance
   try {
     roomConfig.lastfm = JSON.parse(roomConfig.lastfm)
@@ -69,7 +71,9 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
     if (roomLastfmInstance) {
       scrobbleTrack(roomLastfmInstance, payload.song.artistName, payload.song.trackName, roomProfile.slug)
     }
-    postMessage({ roomId: roomProfile.uuid, message: `💽 ${payload.song.artistName}: ${payload.song.trackName}` })
+    let gloatMessage
+    if (payload.userUuid === chatConfig.botId) gloatMessage = await stringsDb.get('botGloat')
+    postMessage({ roomId: roomProfile.uuid, message: `💽 ${payload.song.artistName}: ${payload.song.trackName}${gloatMessage}` })
 
     const currentTheme = await getQuickTheme(roomProfile.slug)
     let themeId
@@ -126,6 +130,11 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
     usersDb.updateLastDisconnected(payload.userUuid)
   })
 
+  // socket.on('sendInitialState', (payload) => {
+  //   console.log('Initial State')
+  //   console.log(payload)
+  // })
+
   socket.on('startConnection', async (payload) => {
     if (!payload.userUuid) return
     if (payload.userUuid === chatConfig.botId) return
@@ -180,24 +189,33 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
     }
   })
 
+  socket.on('wrongMessagePayload', (payload) => {
+    logger.info(JSON.stringify({
+      room: roomProfile.slug,
+      event: 'wrongMessagePayload',
+      payload
+    }))
+  })
+
   // This creates a memory leak crashing the whole server
   //  socket.onAny((event, payload) => {
-  //   logger.info(JSON.stringify({
-  //     room: roomProfile.slug,
-  //     event,
-  //     payload
-  //   }))
+  // console.log(event)
+  // logger.info(JSON.stringify({
+  //   room: roomProfile.slug,
+  //   event,
+  //   payload
+  // }))
   //  })
 }
 
-const processNewMessages = async (roomProfile) => {
+const processNewMessages = async (roomProfile, socket) => {
   const response = await getMessages(roomProfile.uuid, lastMessageIDs[roomProfile.uuid]?.fromTimestamp)
   const messages = response.data
   if (messages.length) {
     messages.forEach(message => {
       lastMessageIDs[roomProfile.uuid].fromTimestamp = message.sentAt + 1
       if (message?.sender === chatConfig.botId) return
-      commands.findCommandsInMessage(message?.data?.customData?.message, roomProfile, message?.sender)
+      commands.findCommandsInMessage(message?.data?.customData?.message, roomProfile, message?.sender, socket)
     })
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "goodbot-ttl",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "A bot to interact with users in chat on tt.live",
   "main": "src/index.js",
   "type": "module",
@@ -43,6 +43,7 @@
     "standard": "^17.0.0"
   },
   "dependencies": {
+    "hot-shots": "^9.2.0",
     "knex": "^2.3.0",
     "mqtt": "^4.3.7",
     "mysql": "^2.18.1",
@@ -54,6 +55,7 @@
     "uuid": "^9.0.0",
     "winston": "^3.8.2",
     "winston-elasticsearch": "^0.17.1",
+    "winston-syslog": "^2.6.0",
     "youtube-search": "^1.1.6"
   }
 }
