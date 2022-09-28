@@ -71,7 +71,7 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
     if (roomLastfmInstance) {
       scrobbleTrack(roomLastfmInstance, payload.song.artistName, payload.song.trackName, roomProfile.slug)
     }
-    let gloatMessage
+    let gloatMessage = ''
     if (payload.userUuid === chatConfig.botId) gloatMessage = await stringsDb.get('botGloat')
     postMessage({ roomId: roomProfile.uuid, message: `💽 ${payload.song.artistName}: ${payload.song.trackName}${gloatMessage}` })
 
