@@ -154,7 +154,7 @@ export const findCommandsInMessage = async (message, roomProfile, sender, socket
         postMessage(replyPayload)
       }
     }
-    if (message.indexOf('bot') > 0) {
+    if (message.indexOf(' bot ') > 0 || message.indexOf(' goodbot ') > 0) {
       const botSentientNames = [
         'botSentient1',
         'botSentient2',
