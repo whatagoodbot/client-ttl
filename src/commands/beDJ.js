@@ -43,7 +43,7 @@ const getSongsFromPlaylist = async (playlist) => {
 }
 
 export const up = async (options) => {
-  const songs = await getSongsFromPlaylist(await getPlaylist(process.env.SPOTIFY_DJ_PLAYLIST))
+  await getSongsFromPlaylist(await getPlaylist(process.env.SPOTIFY_DJ_PLAYLIST))
   djInRooms[options.roomProfile.slug] = true
   options.socket.emit('takeDjSeat', {
     avatarId: config.avatar.id,

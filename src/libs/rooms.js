@@ -114,7 +114,7 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
   socket.on('playNextSong', async (payload) => {
     if (djInRooms[roomProfile.slug]) {
       const nextTrack = { song: botDjSongs[Math.floor(Math.random() * botDjSongs.length)] }
-      socket.emit('sendNextTrackToPlay', nextTrack) 
+      socket.emit('sendNextTrackToPlay', nextTrack)
     }
   })
 
