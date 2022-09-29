@@ -73,7 +73,23 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
       scrobbleTrack(roomLastfmInstance, payload.song.artistName, payload.song.trackName, roomProfile.slug)
     }
     let gloatMessage = ''
-    if (payload.userUuid === chatConfig.botId) gloatMessage = await stringsDb.get('botGloat')
+    if (payload.userUuid === chatConfig.botId) {
+      const gloatMessagesFromDb = [
+        'botGloat1',
+        'botGloat2',
+        'botGloat3',
+        'botGloat4',
+        'botGloat5',
+        'botGloat6',
+        'botGloat7',
+        'botGloat8',
+        'botGloat9',
+        'botGloat10'
+      ]
+      const gloatMessages = await stringsDb.getMany(gloatMessagesFromDb)
+      const gloatMessagetring = gloatMessagesFromDb[Math.floor(Math.random() * gloatMessagesFromDb.length)]
+      gloatMessage = ` ${gloatMessages[gloatMessagetring]}`
+    }
     postMessage({ roomId: roomProfile.uuid, message: `💽 ${payload.song.artistName}: ${payload.song.trackName}${gloatMessage}` })
 
     const currentTheme = await getQuickTheme(roomProfile.slug)
