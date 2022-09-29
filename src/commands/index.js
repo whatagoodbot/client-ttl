@@ -154,13 +154,19 @@ export const findCommandsInMessage = async (message, roomProfile, sender, socket
         postMessage(replyPayload)
       }
     }
-    if (message.indexOf(' bot ') > 0 || message.indexOf(' goodbot ') > 0) {
+    const lowerCaseMessage = message.toLowerCase()
+    if (lowerCaseMessage.indexOf('groupie') > 0) {
       const botSentientNames = [
         'botSentient1',
         'botSentient2',
         'botSentient3',
         'botSentient4',
-        'botSentient5'
+        'botSentient5',
+        'botSentient6',
+        'botSentient7',
+        'botSentient8',
+        'botSentient9',
+        'botSentient10'
       ]
       const botSentients = await stringsDb.getMany(botSentientNames)
       const botSentientString = botSentientNames[Math.floor(Math.random() * botSentientNames.length)]
