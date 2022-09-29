@@ -9,6 +9,7 @@ import { configDb, greetingsDb, userPlaysDb, playReactionsDb, usersDb, djSeatsDb
 import { clearRo } from '../commands/ro.js'
 import { logger } from '../utils/logging.js'
 import { get as getQuickTheme, progress as progressQuickTheme, changeSeats as changeQuickThemeSeats } from './quickThemes.js'
+import { djInRooms, botDjSongs } from '../commands/beDJ.js'
 
 const chatConfig = await configDb.get('cometchat')
 const lastMessageIDs = {}
@@ -109,6 +110,12 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
     seatChangedMessage?.forEach(message => {
       postMessage({ roomId: roomProfile.uuid, message })
     })
+  })
+  socket.on('playNextSong', async (payload) => {
+    if (djInRooms[roomProfile.slug]) {
+      const nextTrack = { song: botDjSongs[Math.floor(Math.random() * botDjSongs.length)] }
+      socket.emit('sendNextTrackToPlay', nextTrack)
+    }
   })
 
   socket.on('leaveDjSeat', async (payload) => {
