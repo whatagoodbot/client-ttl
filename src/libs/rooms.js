@@ -223,7 +223,7 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
   // This creates a memory leak crashing the whole server
   //  socket.onAny((event, payload) => {
   // console.log(event)
-  // logger.info(JSON.stringify({
+  // console.log(JSON.stringify({
   //   room: roomProfile.slug,
   //   event,
   //   payload
@@ -237,7 +237,7 @@ const processNewMessages = async (roomProfile, socket) => {
   if (messages.length) {
     messages.forEach(message => {
       lastMessageIDs[roomProfile.uuid].fromTimestamp = message.sentAt + 1
-      if (message?.sender === chatConfig.botId) return
+      if ( message?.sender === chatConfig.botId || message?.sender === chatConfig.botReplyId) return
       commands.findCommandsInMessage(message?.data?.customData?.message, roomProfile, message?.sender, socket)
     })
   }
