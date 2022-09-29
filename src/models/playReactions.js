@@ -121,6 +121,7 @@ export default (knex) => {
       const results = await knex(tableName)
         .join(tableNamePlays, { 'playReactions.play': 'userPlays.id' })
         .whereBetween('playReactions.createdAt', [firstDayOfMonth, currentDate])
+        .andWhere('userPlays.room', options.roomProfile.slug)
         .modify((queryBuilder) => {
           if (options.theme) {
             queryBuilder.where('userPlays.theme', options.theme)
@@ -153,8 +154,14 @@ export default (knex) => {
       let position = 0
       for (const record in orderedTable) {
         const userProfile = await getUser(orderedTable[record].user)
-        ++position
-        tableMessage.push(`${(!options.theme) ? position : ''} ${messageStart} ${userProfile.nickname} ${await stringsDb.get('reactionTableUserEntry')} ${orderedTable[record].score}`)
+        const positionIcons = [
+          '⓵',
+          '⓶',
+          '⓷',
+          '⓸',
+          '⓹'
+        ]
+        tableMessage.push(`${(!options.theme) ? positionIcons[position++] : ''} ${messageStart} ${userProfile.nickname} ${await stringsDb.get('reactionTableUserEntry')} ${orderedTable[record].score}`)
         messageStart = ''
       }
       const stringKey = isAllTime ? 'reactionTableIntroForAllTime' : 'reactionTableIntro'
