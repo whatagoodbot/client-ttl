@@ -237,7 +237,7 @@ const processNewMessages = async (roomProfile, socket) => {
   if (messages.length) {
     messages.forEach(message => {
       lastMessageIDs[roomProfile.uuid].fromTimestamp = message.sentAt + 1
-      if ( message?.sender === chatConfig.botId || message?.sender === chatConfig.botReplyId) return
+      if (message?.sender === chatConfig.botId) return
       commands.findCommandsInMessage(message?.data?.customData?.message, roomProfile, message?.sender, socket)
     })
   }
