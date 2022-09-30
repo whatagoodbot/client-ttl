@@ -23,6 +23,13 @@ export default (knex) => {
         .andWhere(query)
         .first()
     },
+    getNextAvailable: async (room) => {
+      return await knex(tableName)
+        .whereNull('user')
+        .andWhere({ room })
+        .orderBy('seat', 'ASC')
+        .first()
+    },
     update: async (query, values) => {
       return await knex(tableName)
         .where(query)
