@@ -55,7 +55,6 @@ const commands = {
   },
   mystats: async (options) => {
     options.getPlaysForKey = 'user'
-    options.getPlaysForValue = options.sender
     const promises = [
       userPlaysDb.getPlays(options),
       playReactionsDb.getUserReactions({ type: 'dope', ...options }),
@@ -94,7 +93,7 @@ const commands = {
   },
   roomstats: async (options) => {
     options.getPlaysForKey = 'room'
-    options.getPlaysForValue = options.sender
+    options.getPlaysForValue = options.roomProfile.slug
     const promises = [
       userPlaysDb.getPlays(options),
       playReactionsDb.getRoomReactions({ type: 'dope', ...options }),
