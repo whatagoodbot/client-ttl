@@ -1,9 +1,13 @@
+import broker from 'message-broker'
+
 import { postMessage } from '../libs/cometchat.js'
 import { stringsDb } from '../models/index.js'
 import { metrics } from '../utils/metrics.js'
 
 export default {
   getReply: async (data) => {
+    const validatedResponse = broker.responder.get.response.validate(data)
+    if (validatedResponse.errors) throw { message: validatedResponse.errors } // eslint-disable-line
     if (data.payload) {
       delete data.payload.errors
       if (!data.payload.message) data.payload.message = ''
@@ -15,6 +19,8 @@ export default {
     postMessage({ roomId: data.meta.roomUuid, message: await stringsDb.get('noComprende') })
   },
   getAllReply: async (data) => {
+    const validatedResponse = broker.responder.getAll.response.validate(data)
+    if (validatedResponse.errors) throw { message: validatedResponse.errors } // eslint-disable-line
     if (data.payload.errors) {
       delete data.payload.errors
       return postMessage({ roomId: data.meta.roomUuid, ...data.payload })
@@ -22,6 +28,8 @@ export default {
     postMessage({ roomId: data.meta.roomUuid, message: `${await stringsDb.get('aliases')} ${[...new Set(data.payload.map(response => response.key))].join(', ')}` })
   },
   addReply: async (data) => {
+    const validatedResponse = broker.responder.add.response.validate(data)
+    if (validatedResponse.errors) throw { message: validatedResponse.errors } // eslint-disable-line
     postMessage({ roomId: data.meta.roomUuid, message: `${await stringsDb.get('aiasAdded')} "${data.meta.key}"` })
   }
 }
