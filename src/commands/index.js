@@ -55,6 +55,7 @@ const commands = {
   },
   mystats: async (options) => {
     options.getPlaysForKey = 'user'
+    options.getPlaysForValue = options.sender
     const promises = [
       userPlaysDb.getPlays(options),
       playReactionsDb.getUserReactions({ type: 'dope', ...options }),
