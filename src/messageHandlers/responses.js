@@ -1,26 +1,27 @@
 import { postMessage } from '../libs/cometchat.js'
 import { stringsDb } from '../models/index.js'
+import { metrics } from '../utils/metrics.js'
 
 export default {
-  getReply: async (payload) => {
-    if (payload.response.length) {
-      const reply = {
-        message: ''
-      }
-      const response = payload.response[Math.floor(Math.random() * payload.response.length)]
-      if (response.type === 'text') {
-        reply.message = response.value
-      } else if (response.type === 'image') {
-        reply.images = [response.value]
-      }
-      return postMessage({ roomId: payload.request.roomUuid, ...reply })
+  getReply: async (data) => {
+    if (data.payload) {
+      delete data.payload.errors
+      if (!data.payload.message) data.payload.message = ''
+
+      return postMessage({ roomId: data.meta.roomUuid, ...data.payload })
     }
-    postMessage({ roomId: payload.request.roomUuid, message: await stringsDb.get('noComprende') })
+    // We should never get here
+    metrics.count('noReply', { function: 'getReply' })
+    postMessage({ roomId: data.meta.roomUuid, message: await stringsDb.get('noComprende') })
   },
-  getAllReply: async (payload) => {
-    postMessage({ roomId: payload.request.roomUuid, message: `${await stringsDb.get('aliases')} ${[...new Set(payload.response.map(response => response.name))].join(', ')}` })
+  getAllReply: async (data) => {
+    if (data.payload.errors) {
+      delete data.payload.errors
+      return postMessage({ roomId: data.meta.roomUuid, ...data.payload })
+    }
+    postMessage({ roomId: data.meta.roomUuid, message: `${await stringsDb.get('aliases')} ${[...new Set(data.payload.map(response => response.key))].join(', ')}` })
   },
-  addReply: async (payload) => {
-    postMessage({ roomId: payload.request.roomUuid, message: `${await stringsDb.get('aiasAdded')} "${payload.request.name}"` })
+  addReply: async (data) => {
+    postMessage({ roomId: data.meta.roomUuid, message: `${await stringsDb.get('aiasAdded')} "${data.meta.key}"` })
   }
 }

@@ -44,8 +44,9 @@ export const postMessage = async (options) => {
     badges: ['JQBX'],
     id: uuidv4()
   }
-  if (options.images) {
-    customData.imageUrls = options.images
+  // Nasty, yes. But backwards compatibility until all moved over to new format
+  if (options.images || options.image) {
+    customData.imageUrls = options.images || [options.image]
   }
 
   if (options.mentions) {
