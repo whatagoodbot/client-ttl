@@ -72,7 +72,7 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
     if (roomLastfmInstance) {
       scrobbleTrack(roomLastfmInstance, payload.song.artistName, payload.song.trackName, roomProfile.slug)
     }
-    let gloatMessage = ''
+    let playedBy = ` - played by ${userProfile.nickname}`
     if (payload.userUuid === chatConfig.botId) {
       const gloatMessagesFromDb = [
         'botGloat1',
@@ -88,9 +88,9 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
       ]
       const gloatMessages = await stringsDb.getMany(gloatMessagesFromDb)
       const gloatMessagetring = gloatMessagesFromDb[Math.floor(Math.random() * gloatMessagesFromDb.length)]
-      gloatMessage = ` ${gloatMessages[gloatMessagetring]}`
+      playedBy = `${gloatMessages[gloatMessagetring]}`
     }
-    postMessage({ roomId: roomProfile.uuid, message: `💽 ${payload.song.artistName}: ${payload.song.trackName}${gloatMessage}` })
+    postMessage({ roomId: roomProfile.uuid, message: `💽 ${payload.song.artistName}: ${payload.song.trackName} ${playedBy}` })
 
     const currentTheme = await getQuickTheme(roomProfile.slug)
     let themeId
@@ -223,7 +223,7 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
   // This creates a memory leak crashing the whole server
   //  socket.onAny((event, payload) => {
   // console.log(event)
-  // logger.info(JSON.stringify({
+  // console.log(JSON.stringify({
   //   room: roomProfile.slug,
   //   event,
   //   payload
