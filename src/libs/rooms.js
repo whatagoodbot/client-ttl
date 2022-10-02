@@ -10,6 +10,7 @@ import { clearRo } from '../commands/ro.js'
 import { logger } from '../utils/logging.js'
 import { get as getQuickTheme, progress as progressQuickTheme, changeSeats as changeQuickThemeSeats } from './quickThemes.js'
 import { djInRooms, botDjSongs } from '../commands/beDJ.js'
+import { publish } from '../libs/messages.js'
 
 const chatConfig = await configDb.get('cometchat')
 const lastMessageIDs = {}
@@ -236,9 +237,12 @@ const processNewMessages = async (roomProfile, socket) => {
   const messages = response.data
   if (messages.length) {
     messages.forEach(message => {
+      const customMessage = message?.data?.customData?.message ?? ''
+      const sender = message?.sender ?? ''
       lastMessageIDs[roomProfile.uuid].fromTimestamp = message.sentAt + 1
-      if (message?.sender === chatConfig.botId) return
-      commands.findCommandsInMessage(message?.data?.customData?.message, roomProfile, message?.sender, socket)
+      if (sender === chatConfig.botId || sender === chatConfig.botReplyId) return
+      commands.findCommandsInMessage(message?.data?.customData?.message, roomProfile, sender, socket)
+      publish('chatMessage', { message: customMessage, room: roomProfile.slug, sender, meta: { roomUuid: roomProfile.uuid } })
     })
   }
 }
