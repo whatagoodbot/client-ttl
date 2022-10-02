@@ -2,8 +2,7 @@ import broker from 'message-broker'
 import { logger } from '../utils/logging.js'
 import messageHandlers from '../messageHandlers/responses.js'
 
-const nameSpace = 'responder'
-const topicPrefix = `${process.env.NODE_ENV}/${nameSpace}/`
+const topicPrefix = `${process.env.NODE_ENV}/`
 
 const subscribe = () => {
   Object.keys(messageHandlers).forEach((topic) => {
@@ -42,7 +41,7 @@ broker.client.on('error', (err) => {
 
 export const publish = (topic, request) => {
   try {
-    const validatedRequest = broker[nameSpace][topic].request.validate(request)
+    const validatedRequest = broker[topic]?.request?.validate(request) ?? broker[topic].validate(request)
     if (validatedRequest.errors) throw { message: validatedRequest.errors } // eslint-disable-line
     broker.client.publish(`${topicPrefix}${topic}`, JSON.stringify(validatedRequest))
   } catch (error) {

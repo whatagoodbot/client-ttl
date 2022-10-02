@@ -2,11 +2,11 @@ import { stringsDb } from '../models/index.js'
 import { publish } from '../libs/messages.js'
 
 export const respond = async (options) => {
-  publish('get', { room: options.roomProfile.slug, key: options.command, meta: { roomUuid: options.roomProfile.uuid } })
+  publish('getResponse', { room: options.roomProfile.slug, key: options.command, meta: { roomUuid: options.roomProfile.uuid } })
 }
 
 export const getResponses = async (options) => {
-  publish('getAll', { room: options.roomProfile.slug, meta: { roomUuid: options.roomProfile.uuid } })
+  publish('getAllResponses', { room: options.roomProfile.slug, meta: { roomUuid: options.roomProfile.uuid } })
 }
 
 export const addResponse = async (options) => {
@@ -15,7 +15,7 @@ export const addResponse = async (options) => {
   const value = options.argument.join(' ')
   if (options.commands.includes(key)) return { message: await stringsDb.get('aliasConflict') }
   if (['image', 'text'].includes(type) && key && value) {
-    publish('add', {
+    publish('addResponse', {
       room: options.roomProfile.slug,
       type,
       value,

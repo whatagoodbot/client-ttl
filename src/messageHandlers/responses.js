@@ -5,8 +5,8 @@ import { stringsDb } from '../models/index.js'
 import { metrics } from '../utils/metrics.js'
 
 export default {
-  getReply: async (data) => {
-    const validatedResponse = broker.responder.get.response.validate(data)
+  getResponseReply: async (data) => {
+    const validatedResponse = broker.getResponse.response.validate(data)
     if (validatedResponse.errors) throw { message: validatedResponse.errors } // eslint-disable-line
     if (data.payload) {
       delete data.payload.errors
@@ -18,8 +18,8 @@ export default {
     metrics.count('noReply', { function: 'getReply' })
     postMessage({ roomId: data.meta.roomUuid, message: await stringsDb.get('noComprende') })
   },
-  getAllReply: async (data) => {
-    const validatedResponse = broker.responder.getAll.response.validate(data)
+  getAllResponsesReply: async (data) => {
+    const validatedResponse = broker.getAllResponses.response.validate(data)
     if (validatedResponse.errors) throw { message: validatedResponse.errors } // eslint-disable-line
     if (data.payload.errors) {
       delete data.payload.errors
@@ -27,8 +27,8 @@ export default {
     }
     postMessage({ roomId: data.meta.roomUuid, message: `${await stringsDb.get('aliases')} ${[...new Set(data.payload.map(response => response.key))].join(', ')}` })
   },
-  addReply: async (data) => {
-    const validatedResponse = broker.responder.add.response.validate(data)
+  addResponseReply: async (data) => {
+    const validatedResponse = broker.addResponse.response.validate(data)
     if (validatedResponse.errors) throw { message: validatedResponse.errors } // eslint-disable-line
     postMessage({ roomId: data.meta.roomUuid, message: `${await stringsDb.get('aiasAdded')} "${data.meta.key}"` })
   }
