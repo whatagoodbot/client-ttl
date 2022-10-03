@@ -36,7 +36,7 @@ export const postMessage = async (options) => {
   ]
 
   const customData = {
-    message: options.message,
+    message: options.message || '',
     avatarId: config.avatar.id,
     userName: config.avatar.name,
     color: config.avatar.colour,

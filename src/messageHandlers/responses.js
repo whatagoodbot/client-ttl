@@ -31,5 +31,13 @@ export default {
     const validatedResponse = broker.addResponse.response.validate(data)
     if (validatedResponse.errors) throw { message: validatedResponse.errors } // eslint-disable-line
     postMessage({ roomId: data.meta.roomUuid, message: `${await stringsDb.get('aiasAdded')} "${data.meta.key}"` })
+  },
+  // This should end up being the only response handler
+  broadcastMessage: async(data) => {
+    const validatedResponse = broker.broadcastMessage.validate(data)
+    if (validatedResponse.errors) throw { message: validatedResponse.errors } // eslint-disable-line
+    const newObject = { roomId: data.meta.roomUuid, ...data.response }
+    postMessage(newObject)
+
   }
 }

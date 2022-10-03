@@ -1,10 +1,7 @@
 import { postMessage } from '../libs/cometchat.js'
 import { stringsDb, configDb, userPlaysDb, playReactionsDb } from '../models/index.js'
 
-import getJoke from './dadjoke.js'
 import relink from './relink.js'
-import weather from './weather.js'
-import giphy from './giphy.js'
 import { quicktheme as qt } from './quickThemes.js'
 import { ro } from './ro.js'
 import yt from './youtube.js'
@@ -28,8 +25,12 @@ const commands = {
     return await addResponse(options)
   },
   aliases: getResponses,
-  dadjoke: getJoke,
-  giphy,
+  dadjoke: () => {
+    return { dontRespond: true }
+  },
+  giphy: () => {
+    return { dontRespond: true }
+  },
   help: async (options) => {
     return { message: `${await stringsDb.get('helpIdentifier')} ${options.botConfig.commandIdentifier}. ${await stringsDb.get('helpCommands')} ${getcommands().join(', ')}` }
   },
@@ -110,7 +111,9 @@ const commands = {
     return { messages: reply }
   },
   qt,
-  weather,
+  weather: () => {
+    return { dontRespond: true }
+  },
   yt,
   up,
   down
