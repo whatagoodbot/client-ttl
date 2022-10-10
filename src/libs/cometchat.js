@@ -40,7 +40,7 @@ export const postMessage = async (options) => {
     avatarId: config.avatar.id,
     userName: config.avatar.name,
     color: config.avatar.colour,
-    userUuid: uuidv4(),
+    userUuid: config.botId,
     badges: ['JQBX'],
     id: uuidv4()
   }
