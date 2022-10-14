@@ -1,20 +1,19 @@
 import broker from 'message-broker'
 import { logger } from '../utils/logging.js'
-import messageHandlers from '../messageHandlers/responses.js'
+import { postMessage } from './cometchat.js'
 
 const topicPrefix = `${process.env.NODE_ENV}/`
+const topic = 'broadcast'
 
 const subscribe = () => {
-  Object.keys(messageHandlers).forEach((topic) => {
-    broker.client.subscribe(`${topicPrefix}${topic}`, (err) => {
-      logger.info(`subscribed to ${topicPrefix}${topic}`)
-      if (err) {
-        logger.error({
-          error: err.toString(),
-          topic
-        })
-      }
-    })
+  broker.client.subscribe(`${topicPrefix}${topic}`, (err) => {
+    logger.info(`subscribed to ${topicPrefix}${topic}`)
+    if (err) {
+      logger.error({
+        error: err.toString(),
+        topic
+      })
+    }
   })
 }
 
@@ -27,7 +26,7 @@ if (broker.client.connected) {
 broker.client.on('message', async (topic, payload) => {
   try {
     const message = JSON.parse(payload.toString())
-    messageHandlers[topic.substring(topicPrefix.length)](message)
+    if (message?.meta?.client === 'TTL') receiveBroadcast(message)
   } catch (error) {
     logger.error(error.toString())
   }
@@ -39,10 +38,19 @@ broker.client.on('error', (err) => {
   })
 })
 
-export const publish = (topic, request) => {
+const receiveBroadcast = async (data) => {
+  const validatedBroadcastMessage = broker.broadcast.validate(data)
+  if (validatedBroadcastMessage.errors) return
+  const newObject = { roomId: data.meta.roomUuid, ...data.response }
+  postMessage(newObject)
+}
+export const publish = (topic, request, room, userId, nickname) => {
   try {
-    const validatedRequest = broker[topic]?.request?.validate(request) ?? broker[topic].validate(request)
+    if (!request.meta) return
+    request.meta.client = 'TTL'
+    const validatedRequest = broker[topic].validate(request)
     if (validatedRequest.errors) throw { message: validatedRequest.errors } // eslint-disable-line
+    console.log(`Publishing ${topicPrefix}${topic}`)
     broker.client.publish(`${topicPrefix}${topic}`, JSON.stringify(validatedRequest))
   } catch (error) {
     // what should we do here?

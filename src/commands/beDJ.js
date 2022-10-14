@@ -1,15 +1,15 @@
-import { createRequire } from 'module'
+// import { createRequire } from 'module'
 import { configDb } from '../models/index.js'
 
 const config = await configDb.get('cometchat')
 
-const require = createRequire(import.meta.url)
-const { SpotifyClient } = require('../libs/spotify.cjs')
+// const require = createRequire(import.meta.url)
+// const { SpotifyClient } = require('../libs/spotify.cjs')
 
-const spotify = new SpotifyClient(
-  process.env.SPOTIFY_CLIENT_ID,
-  process.env.SPOTIFY_CLIENT_SECRET
-)
+// const spotify = new SpotifyClient(
+//   process.env.SPOTIFY_CLIENT_ID,
+//   process.env.SPOTIFY_CLIENT_SECRET
+// )
 
 export const djInRooms = {}
 export let botDjSongs

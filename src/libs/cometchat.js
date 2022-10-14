@@ -40,8 +40,9 @@ export const postMessage = async (options) => {
     avatarId: config.avatar.id,
     userName: config.avatar.name,
     color: config.avatar.colour,
-    userUuid: uuidv4(),
-    badges: ['JQBX'],
+    mentions: [],
+    userUuid: config.botId,
+    badges: ['VERIFIED'],
     id: uuidv4()
   }
   // Nasty, yes. But backwards compatibility until all moved over to new format
@@ -50,22 +51,33 @@ export const postMessage = async (options) => {
   }
 
   if (options.mentions) {
-    customData.mentions = options.mentions
+    customData.mentions = options.mentions.map(mention => {
+      return {
+        start: mention.position,
+        userNickname: mention.nickname,
+        userUuid: mention.userId
+      }
+    })
   }
-
+  if (options.mention) {
+    customData.mentions = [{
+      start: options.mention.position,
+      userNickname: options.mention.nickname,
+      userUuid: options.mention.userId
+    }]
+  }
   const payload = {
     type: 'ChatMessage',
     receiverType: 'group',
     category: 'custom',
-    // customData,
     data: {
       customData,
       metadata: {
-        incrementUnreadCount: true
+        incrementUnreadCount: false
       }
     },
     metadata: {
-      incrementUnreadCount: true
+      incrementUnreadCount: false
     },
     receiver: options.roomId
   }

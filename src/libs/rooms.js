@@ -1,23 +1,21 @@
 import { io } from 'socket.io-client'
 import { Chain } from 'repeat'
 
-import { joinRoom, postMessage, getMessages } from './cometchat.js'
+import { joinRoom, getMessages } from './cometchat.js'
 import { getRoom, getUser } from './ttlive.js'
-import * as commands from '../commands/index.js'
-import { createLastfmInstance, scrobbleTrack } from './lastfm.js'
-import { configDb, greetingsDb, userPlaysDb, playReactionsDb, usersDb, djSeatsDb, stringsDb } from '../models/index.js'
-import { clearRo } from '../commands/ro.js'
+import { configDb } from '../models/index.js'
 import { logger } from '../utils/logging.js'
-import { get as getQuickTheme, progress as progressQuickTheme, changeSeats as changeQuickThemeSeats } from './quickThemes.js'
+
 import { djInRooms, botDjSongs } from '../commands/beDJ.js'
 import { publish } from '../libs/messages.js'
+import { delay } from '../utils/timing.js'
 
 const chatConfig = await configDb.get('cometchat')
 const lastMessageIDs = {}
-const durationUntilNextGreeting = (5 * 60) * 1000
 
-export const connectToRoom = async (roomConfig, defaultLastfmInstance) => {
+export const connectToRoom = async (roomConfig) => {
   const roomProfile = await getRoom(roomConfig.slug)
+  console.log(roomProfile.uuid)
   await joinRoom(roomProfile.uuid)
   lastMessageIDs[roomProfile.uuid] = {}
 
@@ -40,178 +38,166 @@ export const connectToRoom = async (roomConfig, defaultLastfmInstance) => {
     .add(() => processNewMessages(roomProfile, socket))
     .every(500)
 
-  let roomLastfmInstance
-  try {
-    roomConfig.lastfm = JSON.parse(roomConfig.lastfm)
-  } catch (error) {
-    logger.info(error)
-  }
-  if (roomConfig?.lastfm?.enabled) {
-    roomLastfmInstance = await createLastfmInstance({
-      api_key: process.env[roomConfig.lastfm.environmentVariables.api_key],
-      api_secret: process.env[roomConfig.lastfm.environmentVariables.api_secret],
-      username: process.env[roomConfig.lastfm.environmentVariables.username],
-      password: process.env[roomConfig.lastfm.environmentVariables.password]
-    })
-  }
-
-  configureListeners(socket, roomProfile, defaultLastfmInstance, roomLastfmInstance)
+  configureListeners(socket, roomProfile, roomConfig)
 }
 
-const configureListeners = async (socket, roomProfile, defaultLastfmInstance, roomLastfmInstance) => {
+const configureListeners = async (socket, roomProfile, roomConfig) => {
+  socket.on('startConnection', async (payload) => {
+    if (!payload.userUuid) return
+    if (payload.userUuid === chatConfig.botId) return
+    const userProfile = await getUser(payload.userUuid)
+    if (!userProfile.nickname) return
+
+    publish('userConnect', {
+      room: roomProfile.slug,
+      nickname: userProfile.nickname,
+      userId: payload.userUuid,
+      meta: {
+        roomUuid: roomProfile.uuid,
+        room: roomProfile.slug,
+        user: {
+          id: payload.userUuid,
+          nickname: userProfile.nickname
+        },
+        sender: 'system'
+      }
+    })
+
+    if (userProfile?.badges.length) {
+      await delay(250)
+      publish('responseRead', {
+        key: userProfile?.badges[0],
+        category: 'badgeReaction',
+        meta: { roomUuid: roomProfile.uuid, sender: 'system' }
+      })
+    }
+  })
+
+  socket.on('userWasDisconnected', async (payload) => {
+    if (!payload.userUuid) return
+    if (payload.userUuid === chatConfig.botId) return
+    const userProfile = await getUser(payload.userUuid)
+    publish('userDisconnect', {
+      userId: payload.userUuid,
+      meta: {
+        roomUuid: roomProfile.uuid,
+        room: roomProfile.slug,
+        user: {
+          id: payload.userUuid,
+          nickname: userProfile.nickname
+        },
+        sender: 'system'
+      }
+    })
+  })
+
   socket.on('playNextSong', async (payload) => {
-    clearRo(roomProfile.slug)
     if (!payload.song) return
 
     const userProfile = await getUser(payload.userUuid)
     if (!userProfile.nickname) return
 
-    let songId = payload.song?.id
-    if (songId.substring(0, 14) === 'spotify:track:') songId = songId.substring(14)
-
-    scrobbleTrack(defaultLastfmInstance, payload.song.artistName, payload.song.trackName)
-    if (roomLastfmInstance) {
-      scrobbleTrack(roomLastfmInstance, payload.song.artistName, payload.song.trackName, roomProfile.slug)
-    }
-    let playedBy = ` - played by ${userProfile.nickname}`
-    if (payload.userUuid === chatConfig.botId) {
-      const gloatMessagesFromDb = [
-        'botGloat1',
-        'botGloat2',
-        'botGloat3',
-        'botGloat4',
-        'botGloat5',
-        'botGloat6',
-        'botGloat7',
-        'botGloat8',
-        'botGloat9',
-        'botGloat10'
-      ]
-      const gloatMessages = await stringsDb.getMany(gloatMessagesFromDb)
-      const gloatMessagetring = gloatMessagesFromDb[Math.floor(Math.random() * gloatMessagesFromDb.length)]
-      playedBy = `${gloatMessages[gloatMessagetring]}`
-    }
-    postMessage({ roomId: roomProfile.uuid, message: `💽 ${payload.song.artistName}: ${payload.song.trackName} ${playedBy}` })
-
-    const currentTheme = await getQuickTheme(roomProfile.slug)
-    let themeId
-    if (currentTheme) {
-      themeId = currentTheme?.quickThemeTracker?.currentTheme
-      const messages = await progressQuickTheme(currentTheme, payload.userUuid, roomProfile.slug)
-      messages?.forEach(message => {
-        postMessage({ roomId: roomProfile.uuid, message })
-      })
-    }
-    userPlaysDb.add(payload.userUuid, roomProfile.slug, payload.song.artistName, payload.song.trackName, songId, payload.song?.musicProvider, themeId)
-  })
-
-  socket.on('sendSatisfaction', async (payload) => {
-    const satisfactionMap = {
-      approve: 'dope',
-      disapprove: 'nope'
-    }
-    const play = await userPlaysDb.getCurrent(roomProfile.slug)
-    playReactionsDb.add(play.id, satisfactionMap[payload.choice], payload.userUuid)
-  })
-
-  socket.on('addOneTimeAnimation', async (payload) => {
-    if (payload.oneTimeAnimation === 'emoji' && payload.animationPayload === '⭐️') {
-      const play = await userPlaysDb.getCurrent(roomProfile.slug)
-      playReactionsDb.add(play.id, 'star', payload.userUuid)
-    }
-  })
-
-  socket.on('takeDjSeat', async (payload) => {
-    djSeatsDb.upsert(payload.userUuid, roomProfile.slug, payload.djSeatKey)
-    const seatChangedMessage = await changeQuickThemeSeats(roomProfile.slug)
-    seatChangedMessage?.forEach(message => {
-      postMessage({ roomId: roomProfile.uuid, message })
-    })
-  })
-  socket.on('playNextSong', async (payload) => {
     if (djInRooms[roomProfile.slug]) {
       const nextTrack = { song: botDjSongs[Math.floor(Math.random() * botDjSongs.length)] }
       socket.emit('sendNextTrackToPlay', nextTrack)
     }
+
+    let songId = payload.song?.id
+    if (songId.substring(0, 14) === 'spotify:track:') songId = songId.substring(14)
+
+    publish('songPlayed', {
+      artist: payload.song.artistName,
+      title: payload.song.trackName,
+      dj: {
+        userId: payload.userUuid,
+        nickname: userProfile.nickname,
+        isBot: payload.userUuid === chatConfig.botId
+      },
+      details: {
+        id: songId,
+        provider: payload.song?.musicProvider
+      },
+      room: roomProfile.slug,
+      meta: {
+        roomUuid: roomProfile.uuid,
+        room: roomProfile.slug,
+        user: {
+          id: payload.userUuid,
+          nickname: userProfile.nickname
+        },
+        sender: 'system',
+        roomConfig
+      }
+    })
+  })
+
+  socket.on('sendSatisfaction', async (payload) => {
+    const userProfile = await getUser(payload.userUuid)
+    const satisfactionMap = {
+      approve: 'dope',
+      disapprove: 'nope'
+    }
+    publish('songReaction', {
+      room: roomProfile.slug,
+      userId: payload.userUuid,
+      reaction: satisfactionMap[payload.choice],
+      meta: {
+        roomUuid: roomProfile.uuid,
+        room: roomProfile.slug,
+        user: {
+          id: payload.userUuid,
+          nickname: userProfile.nickname
+        },
+        sender: 'system'
+      }
+    })
+  })
+
+  socket.on('addOneTimeAnimation', async (payload) => {
+    if (payload.oneTimeAnimation === 'emoji' && payload.animationPayload === '⭐️') {
+      const userProfile = await getUser(payload.userUuid)
+      publish('songReaction', {
+        room: roomProfile.slug,
+        userId: payload.userUuid,
+        reaction: 'star',
+        meta: {
+          roomUuid: roomProfile.uuid,
+          room: roomProfile.slug,
+          user: {
+            id: payload.userUuid,
+            nickname: userProfile.nickname
+          },
+          sender: 'system'
+        }
+      })
+    }
+  })
+
+  socket.on('takeDjSeat', async (payload) => {
+    // djSeatsDb.upsert(payload.userUuid, roomProfile.slug, payload.djSeatKey)
+    // const seatChangedMessage = await changeQuickThemeSeats(roomProfile.slug)
+    // seatChangedMessage?.forEach(message => {
+    //   postMessage({ roomId: roomProfile.uuid, message })
+    // })
   })
 
   socket.on('leaveDjSeat', async (payload) => {
-    djSeatsDb.update({
-      user: payload.userUuid,
-      room: roomProfile.slug
-    }, {
-      user: null
-    })
-    const seatChangedMessage = await changeQuickThemeSeats(roomProfile.slug)
-    seatChangedMessage?.forEach(message => {
-      postMessage({ roomId: roomProfile.uuid, message })
-    })
-  })
-
-  socket.on('userWasDisconnected', (payload) => {
-    if (!payload.userUuid) return
-    if (payload.userUuid === chatConfig.botId) return
-    usersDb.updateLastDisconnected(payload.userUuid)
+    // djSeatsDb.update({
+    //   user: payload.userUuid,
+    //   room: roomProfile.slug
+    // }, {
+    //   user: null
+    // })
+    // const seatChangedMessage = await changeQuickThemeSeats(roomProfile.slug)
+    // seatChangedMessage?.forEach(message => {
+    //   postMessage({ roomId: roomProfile.uuid, message })
+    // })
   })
 
   // socket.on('sendInitialState', (payload) => {
   //   console.log('Initial State')
   //   console.log(payload)
   // })
-
-  socket.on('startConnection', async (payload) => {
-    if (!payload.userUuid) return
-    if (payload.userUuid === chatConfig.botId) return
-
-    const user = await usersDb.get(payload.userUuid)
-    const userLastWelcomed = user?.lastWelcomed
-    if (userLastWelcomed) {
-      if (new Date() - new Date(userLastWelcomed) < durationUntilNextGreeting) return
-    }
-    const userLastDisconnected = user?.lastDisconnected
-    if (userLastDisconnected) {
-      if (new Date() - new Date(userLastDisconnected) < durationUntilNextGreeting) return
-    }
-
-    const userProfile = await getUser(payload.userUuid)
-    if (!userProfile.nickname) return
-    usersDb.updateLastWelcomed(payload.userUuid, userProfile.nickname)
-
-    const greetings = await greetingsDb.get(payload.userUuid)
-    const randomGreeting = Math.floor(Math.random() * greetings.messages.length)
-    const userMention = {
-      start: 0,
-      userNickname: userProfile.nickname,
-      userUuid: payload.userUuid
-    }
-    if (userProfile.nickname && payload.userUuid) {
-      const options = {
-        roomId: roomProfile.uuid,
-        mentions: [userMention],
-        message: `@${userProfile.nickname} is here. ${greetings.messages[randomGreeting]}`
-      }
-      if (greetings.images) {
-        options.images = [
-          greetings.images[Math.floor(Math.random() * greetings.images.length)]
-        ]
-      }
-      postMessage(options)
-      if (userProfile?.badges.includes('STAFF')) {
-        const staffWelcomeNames = [
-          'staffWelcome1',
-          'staffWelcome2',
-          'staffWelcome3',
-          'staffWelcome4',
-          'staffWelcome5',
-          'staffWelcome6'
-        ]
-        const staffWelcomes = await stringsDb.getMany(staffWelcomeNames)
-        const staffWelcomeString = staffWelcomeNames[Math.floor(Math.random() * staffWelcomeNames.length)]
-        const randomStaffWelcome = staffWelcomes[staffWelcomeString]
-        postMessage({ roomId: roomProfile.uuid, message: randomStaffWelcome })
-      }
-    }
-  })
 
   socket.on('wrongMessagePayload', (payload) => {
     logger.info(JSON.stringify({
@@ -236,13 +222,26 @@ const processNewMessages = async (roomProfile, socket) => {
   const response = await getMessages(roomProfile.uuid, lastMessageIDs[roomProfile.uuid]?.fromTimestamp)
   const messages = response.data
   if (messages.length) {
-    messages.forEach(message => {
-      const customMessage = message?.data?.customData?.message ?? ''
-      const sender = message?.sender ?? ''
-      lastMessageIDs[roomProfile.uuid].fromTimestamp = message.sentAt + 1
+    for (const message in messages) {
+      const customMessage = messages[message]?.data?.customData?.message ?? ''
+      const sender = messages[message]?.sender ?? ''
+      lastMessageIDs[roomProfile.uuid].fromTimestamp = messages[message].sentAt + 1
       if (sender === chatConfig.botId || sender === chatConfig.botReplyId) return
-      commands.findCommandsInMessage(message?.data?.customData?.message, roomProfile, sender, socket)
-      publish('chatMessage', { message: customMessage, room: roomProfile.slug, sender, meta: { roomUuid: roomProfile.uuid } })
-    })
+      const userProfile = await getUser(sender)
+      publish('chatMessage', {
+        message: customMessage,
+        room: roomProfile.slug,
+        sender,
+        meta: {
+          roomUuid: roomProfile.uuid,
+          room: roomProfile.slug,
+          user: {
+            id: sender,
+            nickname: userProfile.nickname
+          },
+          sender
+        }
+      })
+    }
   }
 }
