@@ -1,6 +1,7 @@
 import broker from 'message-broker'
 import { logger } from '../utils/logging.js'
 import messageHandlers from '../messageHandlers/responses.js'
+import captureBroadcast from '../messageHandlers/broadcast.js'
 
 const topicPrefix = `${process.env.NODE_ENV}/`
 
@@ -27,6 +28,7 @@ if (broker.client.connected) {
 broker.client.on('message', async (topic, payload) => {
   try {
     const message = JSON.parse(payload.toString())
+    captureBroadcast(message)
     messageHandlers[topic.substring(topicPrefix.length)](message)
   } catch (error) {
     logger.error(error.toString())

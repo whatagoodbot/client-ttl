@@ -1,5 +1,6 @@
 import { io } from 'socket.io-client'
 import { Chain } from 'repeat'
+import { v4 as uuidv4 } from 'uuid'
 
 import { joinRoom, postMessage, getMessages } from './cometchat.js'
 import { getRoom, getUser } from './ttlive.js'
@@ -242,7 +243,14 @@ const processNewMessages = async (roomProfile, socket) => {
       lastMessageIDs[roomProfile.uuid].fromTimestamp = message.sentAt + 1
       if (sender === chatConfig.botId || sender === chatConfig.botReplyId) return
       commands.findCommandsInMessage(message?.data?.customData?.message, roomProfile, sender, socket)
-      publish('chatMessage', { message: customMessage, room: roomProfile.slug, sender, meta: { roomUuid: roomProfile.uuid } })
+      const messageId = uuidv4()
+      logger.info(JSON.stringify({
+        messageId,
+        message: customMessage,
+        room: roomProfile.slug,
+        sender
+      }))
+      publish('chatMessage', { messageId, message: customMessage, room: roomProfile.slug, sender, meta: { roomUuid: roomProfile.uuid } })
     })
   }
 }
