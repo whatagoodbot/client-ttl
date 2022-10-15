@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid'
 import broker from 'message-broker'
 import { logger } from '../utils/logging.js'
 import messageHandlers from '../messageHandlers/responses.js'
@@ -41,6 +42,9 @@ broker.client.on('error', (err) => {
 
 export const publish = (topic, request) => {
   try {
+    if (!request.meta) return
+    request.meta.client = 'TTL'
+    request.messageId = uuidv4()
     const validatedRequest = broker[topic]?.request?.validate(request) ?? broker[topic].validate(request)
     if (validatedRequest.errors) throw { message: validatedRequest.errors } // eslint-disable-line
     broker.client.publish(`${topicPrefix}${topic}`, JSON.stringify(validatedRequest))
