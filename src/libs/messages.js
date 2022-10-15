@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid'
 import broker from 'message-broker'
 import { logger } from '../utils/logging.js'
 import { postMessage } from './cometchat.js'
@@ -41,13 +42,14 @@ broker.client.on('error', (err) => {
 const receiveBroadcast = async (data) => {
   const validatedBroadcastMessage = broker.broadcast.validate(data)
   if (validatedBroadcastMessage.errors) return
-  const newObject = { roomId: data.meta.roomUuid, ...data.response }
+  const newObject = { roomId: data.meta.roomUuid, ...data }
   postMessage(newObject)
 }
 export const publish = (topic, request, room, userId, nickname) => {
   try {
     if (!request.meta) return
     request.meta.client = 'TTL'
+    request.messageId = uuidv4()
     const validatedRequest = broker[topic].validate(request)
     if (validatedRequest.errors) throw { message: validatedRequest.errors } // eslint-disable-line
     console.log(`Publishing ${topicPrefix}${topic}`)
