@@ -47,6 +47,8 @@ export const publish = (topic, request) => {
     request.messageId = uuidv4()
     const validatedRequest = broker[topic]?.request?.validate(request) ?? broker[topic].validate(request)
     if (validatedRequest.errors) throw { message: validatedRequest.errors } // eslint-disable-line
+    console.log(`Publishing topic ${topic}`)
+    console.log(validatedRequest)
     broker.client.publish(`${topicPrefix}${topic}`, JSON.stringify(validatedRequest))
   } catch (error) {
     // what should we do here?
