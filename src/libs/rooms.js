@@ -91,7 +91,7 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
       const gloatMessagetring = gloatMessagesFromDb[Math.floor(Math.random() * gloatMessagesFromDb.length)]
       playedBy = `${gloatMessages[gloatMessagetring]}`
     }
-    postMessage({ roomId: roomProfile.uuid, message: `💽 ${payload.song.artistName}: ${payload.song.trackName} ${playedBy}` })
+    // postMessage({ roomId: roomProfile.uuid, message: `💽 ${payload.song.artistName}: ${payload.song.trackName} ${playedBy}` })
 
     const currentTheme = await getQuickTheme(roomProfile.slug)
     let themeId
