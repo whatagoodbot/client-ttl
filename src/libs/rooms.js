@@ -55,10 +55,10 @@ export const connectToRoom = async (roomConfig, defaultLastfmInstance) => {
     })
   }
 
-  configureListeners(socket, roomProfile, defaultLastfmInstance, roomLastfmInstance)
+  configureListeners(socket, roomProfile, defaultLastfmInstance, roomLastfmInstance, roomConfig)
 }
 
-const configureListeners = async (socket, roomProfile, defaultLastfmInstance, roomLastfmInstance) => {
+const configureListeners = async (socket, roomProfile, defaultLastfmInstance, roomLastfmInstance, roomConfig) => {
   socket.on('playNextSong', async (payload) => {
     clearRo(roomProfile.slug)
     if (!payload.song) return
@@ -103,6 +103,30 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
       })
     }
     userPlaysDb.add(payload.userUuid, roomProfile.slug, payload.song.artistName, payload.song.trackName, songId, payload.song?.musicProvider, themeId)
+    publish('songPlayed', {
+      artist: payload.song.artistName,
+      title: payload.song.trackName,
+      dj: {
+        userId: payload.userUuid,
+        nickname: userProfile.nickname,
+        isBot: payload.userUuid === chatConfig.botId
+      },
+      details: {
+        id: songId,
+        provider: payload.song?.musicProvider
+      },
+      room: roomProfile.slug,
+      meta: {
+        roomUuid: roomProfile.uuid,
+        room: roomProfile.slug,
+        user: {
+          id: payload.userUuid,
+          nickname: userProfile.nickname
+        },
+        sender: 'system',
+        roomConfig
+      }
+    })
   })
 
   socket.on('sendSatisfaction', async (payload) => {
