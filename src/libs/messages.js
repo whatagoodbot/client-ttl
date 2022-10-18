@@ -48,14 +48,14 @@ export const publish = (topic, request) => {
     if (topic === 'songPlayed') {
       console.log(request)
     }
-    const validatedRequest = broker[topic]?.request?.validate(request) ?? broker[topic].validate(request)
-    if (validatedRequest.errors) throw { message: validatedRequest.errors } // eslint-disable-line
-    console.log(`Publishing topic ${topic}`)
-    console.log(validatedRequest)
-    broker.client.publish(`${topicPrefix}${topic}`, JSON.stringify(validatedRequest))
+    // const validatedRequest = broker[topic]?.request?.validate(request) ?? broker[topic].validate(request)
+    // if (validatedRequest.errors) throw { message: validatedRequest.errors } // eslint-disable-line
+    // console.log(`Publishing topic ${topic}`)
+    // console.log(validatedRequest)
+    broker.client.publish(`${topicPrefix}${topic}`, JSON.stringify(request))
   } catch (error) {
-    console.log('error')
-    console.log(error)
+    // console.log('error')
+    // console.log(error)
     // what should we do here?
     // broker.client.publish(`${topicPrefix}${topic}`, JSON.stringify({ error: error.toString() }))
   }
