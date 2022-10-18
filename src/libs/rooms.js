@@ -119,6 +119,10 @@ const configureListeners = async (socket, roomProfile, roomConfig) => {
       },
       room: roomProfile.slug,
       meta: {
+        id: songId,
+        provider: payload.song?.musicProvider,
+        artist: payload.song.artistName,
+        title: payload.song.trackName,
         roomUuid: roomProfile.uuid,
         room: roomProfile.slug,
         user: {
