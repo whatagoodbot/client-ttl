@@ -136,12 +136,43 @@ const configureListeners = async (socket, roomProfile, defaultLastfmInstance, ro
     }
     const play = await userPlaysDb.getCurrent(roomProfile.slug)
     playReactionsDb.add(play.id, satisfactionMap[payload.choice], payload.userUuid)
+
+    const userProfile = await getUser(payload.userUuid)
+    publish('songReaction', {
+      room: roomProfile.slug,
+      userId: payload.userUuid,
+      reaction: satisfactionMap[payload.choice],
+      meta: {
+        roomUuid: roomProfile.uuid,
+        room: roomProfile.slug,
+        user: {
+          id: payload.userUuid,
+          nickname: userProfile.nickname
+        },
+        sender: 'system'
+      }
+    })
   })
 
   socket.on('addOneTimeAnimation', async (payload) => {
     if (payload.oneTimeAnimation === 'emoji' && payload.animationPayload === '⭐️') {
       const play = await userPlaysDb.getCurrent(roomProfile.slug)
       playReactionsDb.add(play.id, 'star', payload.userUuid)
+      const userProfile = await getUser(payload.userUuid)
+      publish('songReaction', {
+        room: roomProfile.slug,
+        userId: payload.userUuid,
+        reaction: 'star',
+        meta: {
+          roomUuid: roomProfile.uuid,
+          room: roomProfile.slug,
+          user: {
+            id: payload.userUuid,
+            nickname: userProfile.nickname
+          },
+          sender: 'system'
+        }
+      })
     }
   })
 
