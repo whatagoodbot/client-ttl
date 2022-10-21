@@ -1,11 +1,12 @@
 {
   "name": "goodbot-ttl",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "A bot to interact with users in chat on tt.live",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development nodemon -r dotenv/config src/index.js",
+    "prod": "NODE_ENV=production nodemon -r dotenv/config src/index.js",
     "container": "node -r dotenv/config src/index.js",
     "nooutput": "NO_OUTPUT=true nodemon -r dotenv/config src/index.js",
     "lint": "standard",
@@ -45,7 +46,7 @@
   "dependencies": {
     "hot-shots": "^9.2.0",
     "knex": "^2.3.0",
-    "message-broker": "github:whatagoodbot/message-broker",
+    "message-broker": "github:whatagoodbot/message-broker#v3.0.0",
     "mysql": "^2.18.1",
     "node-fetch": "^3.2.10",
     "repeat": "^2.0.4",

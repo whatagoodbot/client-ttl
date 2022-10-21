@@ -79,7 +79,7 @@ export const postMessage = async (options) => {
     metadata: {
       incrementUnreadCount: false
     },
-    receiver: options.roomId
+    receiver: options.room.id
   }
   if (process.env.NO_OUTPUT === 'true') return
   const url = buildUrl(`${config.apiKey}.apiclient-${config.region}.${config.hostname}`, paths)
