@@ -9,16 +9,6 @@ import { publish, recievedCommand } from './messages.js'
 import { delay } from '../utils/timing.js'
 
 const chatConfig = await configDb.get('cometchat')
-const tempSong = {
-  id: 'spotify:track:45OL4yJZuV5CghHuSoYFSF',
-  artistName: 'CHIKA',
-  duration: 213,
-  genre: 'unknown',
-  isrc: 'USWB11901645',
-  musicProvider: 'spotify',
-  trackName: 'High Rises',
-  trackUrl: 'not applicable'
-}
 
 export class Bot {
   constructor (roomConfig, debug = false) {
@@ -39,6 +29,8 @@ export class Bot {
     }
     this.djs = []
     this.isDj = false
+    this.lastPlayed = []
+    this.botPlaylist = []
   }
 
   async publishMessage (topic, message, userId, sender = 'system') {
@@ -47,7 +39,7 @@ export class Bot {
     publish(topic, {
       ...message,
       messageId: uuidv4(),
-      client: 'TTL',
+      client: process.env.npm_package_name,
       room: {
         id: this.room.id,
         slug: this.room.slug,
@@ -114,7 +106,7 @@ export class Bot {
 
     this.publishMessage('userConnect', {}, payload.userUuid)
 
-    if (userProfile?.badges.length) {
+    if (userProfile?.badges && userProfile?.badges.length) {
       await delay(250)
       const msg = {
         key: userProfile?.badges[0],
@@ -130,13 +122,21 @@ export class Bot {
     this.publishMessage('userDisconnect', {}, payload.userUuid)
   }
 
+  trackLastPlayed (trackID) {
+    this.lastPlayed.push(trackID)
+    if (this.lastPlayed.length > 4) this.lastPlayed.shift()
+    this.publishMessage('externalRequest', { service: 'spotify-client', name: 'seeds', seedTracks: this.lastPlayed }, chatConfig.botId)
+  }
+
   async playNextSongHandler (payload) {
     if (!payload.song) return
     if (this.isDj) {
-      const nextTrack = { song: tempSong }
+      const nextTrack = { song: this.botPlaylist[0] }
       this.socket.emit('sendNextTrackToPlay', nextTrack)
+      this.botPlaylist.shift()
     }
     let songId = payload.song?.id
+    this.trackLastPlayed(songId)
     if (songId.substring(0, 14) === 'spotify:track:') songId = songId.substring(14)
     this.nowPlaying = {
       dj: payload.userUuid,
@@ -183,6 +183,7 @@ export class Bot {
       isBot: payload.isBot,
       nextTrack: payload.nextTrack
     }
+    logger.debug('Next DJ Slot', this.findNextFreeDjSeat())
   }
 
   // TODO: deal with themes
@@ -191,7 +192,7 @@ export class Bot {
     this.djs = this.djs.filter(
       (item) => item.userId !== payload.userUuid
     )
-    console.log(this.djs)
+    logger.debug('Next DJ Slot', this.findNextFreeDjSeat())
   }
 
   wrongMessagePayloadHandler (payload) {
@@ -206,11 +207,26 @@ export class Bot {
   async sendInitialStateHandler (payload) {
     logger.debug('sendInitialStateHandler')
     for (const djPosition in payload.djSeats.value) {
+      let nickname
+      if (payload.djSeats.value[djPosition][1].userUuid) {
+        const userProfile = await getUser(payload.djSeats.value[djPosition][1].userUuid)
+        nickname = userProfile.nickname
+      }
+      // this.djs.push({
+      //   userId: payload.djSeats.value[djPosition][1].userUuid || undefined,
+      //   nickname,
+      //   isBot: payload.djSeats.value[djPosition][1].isBot,
+      //   nextTrack: {
+      //     id: payload?.djSeats?.value[djPosition][1]?.nextTrack?.song?.id,
+      //     musicProvider: payload?.djSeats?.value[djPosition][1]?.nextTrack?.song?.musicProvider,
+      //     artistName: payload?.djSeats?.value[djPosition][1]?.nextTrack?.song?.artistName,
+      //     trackName: payload?.djSeats?.value[djPosition][1]?.nextTrack?.song?.trackName
+      //   }
+      // })
       this.djs.push({
-        userId: payload.djSeats.value[djPosition].userUuid,
-        nickname: payload.djSeats.value[djPosition].userUuid ? await getUser(payload.djSeats.value[djPosition].userUuid) : undefined,
-        isBot: payload.djSeats.value[djPosition].isBot,
-        nextTrack: payload.djSeats.value[djPosition].nextTrack
+        userId: payload.djSeats.value[djPosition][1].userUuid || undefined,
+        nickname,
+        isBot: payload.djSeats.value[djPosition][1].isBot
       })
     }
   }
@@ -221,11 +237,25 @@ export class Bot {
     logger.debug(payload)
   }
 
+  updateBotPlaylist (payload) {
+    this.botPlaylist = payload.nextTracks.map(track => {
+      return {
+        id: track.uri,
+        artistName: track.artists[0].name,
+        duration: track.duration_ms / 1000,
+        musicProvider: 'spotify',
+        trackName: track.name,
+        trackUrl: track.href
+      }
+    })
+  }
+
   externalCommandHandler (payload) {
     logger.debug(`Received External Command ${payload.name} for ${payload.room.id}`)
     if (payload.room.id === this.room.id) {
       if (payload.name === 'up') this.stepUp()
       if (payload.name === 'down') this.stepDown()
+      if (payload.name === 'updateBotPlaylist') this.updateBotPlaylist(payload)
     }
   }
 
@@ -249,15 +279,16 @@ export class Bot {
     if (this.isDj) return
     const djSeatKey = this.findNextFreeDjSeat()
     logger.debug(`Found dj seat ${djSeatKey}`)
-    this.socket.emit('takeDjSeat', {
+    const beDjPayload = {
       avatarId: chatConfig.avatar.id,
       djSeatKey,
       nextTrack: {
-        song: tempSong
+        song: this.botPlaylist[0]
       },
       userUuid: chatConfig.botId,
       isBot: true
-    })
+    }
+    this.socket.emit('takeDjSeat', beDjPayload)
     this.isDj = true
     const msg = {
       key: 'djGroupie',
