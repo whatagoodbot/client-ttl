@@ -52,7 +52,7 @@ const receiveBroadcast = async (data) => {
   const validatedBroadcastMessage = broker.broadcast.validate(data)
   if (validatedBroadcastMessage.errors) return
   // data.room.id = '9d2d87a4-a515-424f-ba27-11b9878c64eb' //good bot test
-  data.room.id = '8fe23fc9-c002-4ff5-bc19-36cb03915f71' // nabs test
+  // data.room.id = '8fe23fc9-c002-4ff5-bc19-36cb03915f71' // nabs test
   postMessage(data)
 }
 export const publish = (topic, request) => {
