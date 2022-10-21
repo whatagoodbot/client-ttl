@@ -294,12 +294,11 @@ export class Bot {
       key: 'djGroupie',
       category: 'system'
     }
-    this.publishMessage('responseRead', msg)
+    this.publishMessage('responseRead', msg, chatConfig.botId)
   }
 
   stepDown () {
     logger.debug('stepDown')
-    if (!this.isDj) return
     this.socket.emit('leaveDjSeat', {
       userUuid: chatConfig.botId
     })
@@ -308,7 +307,7 @@ export class Bot {
       key: 'djGroupieNoMore',
       category: 'system'
     }
-    this.publishMessage('responseRead', msg)
+    this.publishMessage('responseRead', msg, chatConfig.botId)
   }
 
   findNextFreeDjSeat () {
