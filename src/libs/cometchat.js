@@ -14,7 +14,7 @@ const headers = {
   sdk: 'javascript@3.0.10'
 }
 
-export const joinRoom = async (roomId) => {
+export const joinChat = async (roomId) => {
   headers.appid = config.apiKey
   const paths = [
     config.version,

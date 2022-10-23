@@ -72,3 +72,18 @@ export const pinMessage = async (slug, message) => {
   const response = await makeRequest(url, { method: 'POST', body: JSON.stringify(body) }, headers)
   return response
 }
+
+export const joinRoom = async slug => {
+  const config = await configDb.get(configName)
+  const paths = [
+    'rooms',
+    slug,
+    'join'
+  ]
+  const headers = getHeaders(config)
+  headers.authority = config.roomHost
+
+  const url = buildUrl(config.roomHost, paths)
+  const response = await makeRequest(url, { headers, method: 'POST' })
+  return response
+}

@@ -1,8 +1,8 @@
 import { io } from 'socket.io-client'
 import { v4 as uuidv4 } from 'uuid'
 
-import { joinRoom, getMessages } from './cometchat.js'
-import { getRoom, getUser } from './ttlive.js'
+import { joinChat, getMessages } from './cometchat.js'
+import { getRoom, joinRoom, getUser } from './ttlive.js'
 import { configDb } from '../models/index.js'
 import { logger } from '../utils/logging.js'
 import { publish, recievedCommand } from './messages.js'
@@ -77,13 +77,15 @@ export class Bot {
       reconnection: true
     })
 
-    joinRoom(this.roomId)
+    joinChat(this.roomId)
+    logger.debug(`Joining ${this.room.slug}: ${this.room.id}`)
+    await joinRoom(this.room.slug)
   }
 
   async processNewMessages () {
     const response = await getMessages(this.room.id, this.lastMessageIDs?.fromTimestamp)
     const messages = response.data
-    if (messages.length) {
+    if (messages?.length) {
       for (const message in messages) {
         const customMessage = messages[message]?.data?.customData?.message ?? ''
         if (!customMessage) return
