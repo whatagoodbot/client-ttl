@@ -33,7 +33,7 @@ export class Bot {
     this.botPlaylist = []
   }
 
-  async publishMessage (topic, message, userId, sender = 'system') {
+  async publishMessage (topic, message, userId = chatConfig.botId, sender = 'system') {
     const userProfile = await getUser(userId)
     if (!userProfile.nickname) return
     publish(topic, {
@@ -86,6 +86,7 @@ export class Bot {
     if (messages.length) {
       for (const message in messages) {
         const customMessage = messages[message]?.data?.customData?.message ?? ''
+        if (!customMessage) return
         const sender = messages[message]?.sender ?? ''
         this.lastMessageIDs.fromTimestamp = messages[message].sentAt + 1
         if (sender === chatConfig.botId || sender === chatConfig.botReplyId) return
@@ -125,7 +126,7 @@ export class Bot {
   trackLastPlayed (trackID) {
     this.lastPlayed.push(trackID)
     if (this.lastPlayed.length > 4) this.lastPlayed.shift()
-    this.publishMessage('externalRequest', { service: 'spotify-client', name: 'seeds', seedTracks: this.lastPlayed }, chatConfig.botId)
+    this.publishMessage('externalRequest', { service: 'spotify-client', name: 'seeds', seedTracks: this.lastPlayed })
   }
 
   async playNextSongHandler (payload) {
@@ -206,6 +207,7 @@ export class Bot {
 
   async sendInitialStateHandler (payload) {
     logger.debug('sendInitialStateHandler')
+    if (!payload?.djSeats?.value) return
     for (const djPosition in payload.djSeats.value) {
       let nickname
       if (payload.djSeats.value[djPosition][1].userUuid) {
@@ -294,7 +296,7 @@ export class Bot {
       key: 'djGroupie',
       category: 'system'
     }
-    this.publishMessage('responseRead', msg, chatConfig.botId)
+    this.publishMessage('responseRead', msg)
   }
 
   stepDown () {
@@ -307,7 +309,7 @@ export class Bot {
       key: 'djGroupieNoMore',
       category: 'system'
     }
-    this.publishMessage('responseRead', msg, chatConfig.botId)
+    this.publishMessage('responseRead', msg)
   }
 
   findNextFreeDjSeat () {
