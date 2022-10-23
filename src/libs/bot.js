@@ -207,6 +207,7 @@ export class Bot {
 
   async sendInitialStateHandler (payload) {
     logger.debug('sendInitialStateHandler')
+    if (!payload?.djSeats?.value) return
     for (const djPosition in payload.djSeats.value) {
       let nickname
       if (payload.djSeats.value[djPosition][1].userUuid) {
