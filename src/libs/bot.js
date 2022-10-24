@@ -128,7 +128,7 @@ export class Bot {
 
   trackLastPlayed (trackID) {
     this.lastPlayed.push(trackID)
-    if (this.lastPlayed.length > 4) this.lastPlayed.shift()
+    if (this.lastPlayed.length > 9) this.lastPlayed.shift()
     this.publishMessage('externalRequest', { service: 'spotify-client', name: 'seeds', seedTracks: this.lastPlayed })
   }
 
