@@ -1,10 +1,11 @@
 {
   "name": "goodbot-ttl",
-  "version": "3.0.3",
+  "version": "3.1.0",
   "description": "A bot to interact with users in chat on tt.live",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
+    "debug": "FULLDEBUG=true NODE_ENV=production nodemon -r dotenv/config src/index.js",
     "dev": "NODE_ENV=development nodemon -r dotenv/config src/index.js",
     "prod": "NODE_ENV=production nodemon -r dotenv/config src/index.js",
     "container": "node -r dotenv/config src/index.js",
