@@ -56,6 +56,7 @@ export class Bot {
       djs: this.djs
     })
     logger.debug(`Published ${topic}`)
+    if (process.env.FULLDEBUG) console.log(message)
   }
 
   async connect () {
@@ -87,10 +88,10 @@ export class Bot {
     const messages = response.data
     if (messages?.length) {
       for (const message in messages) {
+        this.lastMessageIDs.fromTimestamp = messages[message].sentAt + 1
         const customMessage = messages[message]?.data?.customData?.message ?? ''
         if (!customMessage) return
         const sender = messages[message]?.sender ?? ''
-        this.lastMessageIDs.fromTimestamp = messages[message].sentAt + 1
         if (sender === chatConfig.botId || sender === chatConfig.botReplyId) return
         const msg = {
           chatMessage: customMessage,
