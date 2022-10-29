@@ -13,6 +13,9 @@ const chatConfig = await configDb.get('cometchat')
 export class Bot {
   constructor (roomConfig, debug = false) {
     this.roomConfig = roomConfig
+    this.liveDebug = {
+      DJ: false
+    }
     this.lastMessageIDs = {}
     this.room = {
       slug: roomConfig.slug,
@@ -93,6 +96,18 @@ export class Bot {
         if (!customMessage) return
         const sender = messages[message]?.sender ?? ''
         if (sender === chatConfig.botId || sender === chatConfig.botReplyId) return
+        if (customMessage.substring(0,5) === 'DEBUG') {
+          const args = customMessage.split(' ')
+          const method = args[1]
+          const mode = args[2]
+          this.liveDebug[method] = (mode === 'ON')
+          console.log('method', method, 'mode', mode)
+          console.log(this.liveDebug)
+          this.publishMessage('requestToBroadcast', {
+            message: `Turned ${mode} debug mode for ${method}`
+          })
+      
+        }
         const msg = {
           chatMessage: customMessage,
           room: this.room.slug,
@@ -281,7 +296,15 @@ export class Bot {
 
   stepUp () {
     logger.debug('stepUp')
+    if (this.liveDebug.DJ) this.publishMessage('requestToBroadcast', {
+      message: `DEBUG: Already DJ = ${this.isDj}. Next Free seat = ${this.findNextFreeDjSeat()}. Next Song = ${this.botPlaylist[0].trackName} by ${this.botPlaylist[0].artistName}`
+    })
     if (this.isDj) return
+    if (this.botPlaylist[0] === undefined) {
+      return this.publishMessage('requestToBroadcast', {
+        message: 'I haven\'t heard enough songs yet, so I\'m not sure what to play - I need to jam to at least 1 song'
+      })
+    }
     const djSeatKey = this.findNextFreeDjSeat()
     logger.debug(`Found dj seat ${djSeatKey}`)
     const beDjPayload = {
