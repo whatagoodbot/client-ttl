@@ -45,6 +45,8 @@
     "standard": "^17.0.0"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.7.1",
+    "@grpc/proto-loader": "^0.7.3",
     "hot-shots": "^9.2.0",
     "knex": "^2.3.0",
     "message-broker": "github:whatagoodbot/message-broker#v3.0.0",
