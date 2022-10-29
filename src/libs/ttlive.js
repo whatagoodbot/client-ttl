@@ -11,7 +11,7 @@ const getHeaders = (config) => {
   }
 }
 
-export const getUser = async (userId) => {
+export const getTTUser = async (userId) => {
   const config = await configDb.get(configName)
   const paths = [
     'profile',

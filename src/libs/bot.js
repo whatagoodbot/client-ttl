@@ -2,17 +2,21 @@ import { io } from 'socket.io-client'
 import { v4 as uuidv4 } from 'uuid'
 
 import { joinChat, getMessages } from './cometchat.js'
-import { getRoom, joinRoom, getUser } from './ttlive.js'
+import { getRoom, joinRoom, getTTUser } from './ttlive.js'
 import { configDb } from '../models/index.js'
 import { logger } from '../utils/logging.js'
 import { publish, recievedCommand } from './messages.js'
 import { delay } from '../utils/timing.js'
+import { getUser } from './grpc.js'
 
 const chatConfig = await configDb.get('cometchat')
 
 export class Bot {
   constructor (roomConfig, debug = false) {
     this.roomConfig = roomConfig
+    this.liveDebug = {
+      DJ: false
+    }
     this.lastMessageIDs = {}
     this.room = {
       slug: roomConfig.slug,
@@ -34,7 +38,7 @@ export class Bot {
   }
 
   async publishMessage (topic, message, userId = chatConfig.botId, sender = 'system') {
-    const userProfile = await getUser(userId)
+    const userProfile = await getTTUser(userId)
     if (!userProfile.nickname) return
     publish(topic, {
       ...message,
@@ -93,6 +97,21 @@ export class Bot {
         if (!customMessage) return
         const sender = messages[message]?.sender ?? ''
         if (sender === chatConfig.botId || sender === chatConfig.botReplyId) return
+        if (customMessage.substring(0, 5) === 'DEBUG') {
+          const senderConfig = await getUser(sender)
+          if (!senderConfig?.admin) {
+            return this.publishMessage('requestToBroadcast', {
+              message: 'You\'re not the boss of me'
+            })
+          }
+          const args = customMessage.split(' ')
+          const method = args[1]
+          const mode = args[2]
+          this.liveDebug[method] = (mode === 'ON')
+          this.publishMessage('requestToBroadcast', {
+            message: `Turned ${mode} debug mode for ${method}`
+          })
+        }
         const msg = {
           chatMessage: customMessage,
           room: this.room.slug,
@@ -106,7 +125,7 @@ export class Bot {
   async startConnectionHandler (payload) {
     if (!payload.userUuid) return
     if (payload.userUuid === chatConfig.botId) return
-    const userProfile = await getUser(payload.userUuid)
+    const userProfile = await getTTUser(payload.userUuid)
 
     this.publishMessage('userConnect', {}, payload.userUuid)
 
@@ -178,7 +197,7 @@ export class Bot {
     logger.debug('takeDjSeatHandler')
     let nickname = null
     if (payload.userUuid) {
-      const userProfile = await getUser(payload.userUuid)
+      const userProfile = await getTTUser(payload.userUuid)
       nickname = userProfile.nickname
     }
     this.djs[payload.djSeatKey] = {
@@ -214,7 +233,7 @@ export class Bot {
     for (const djPosition in payload.djSeats.value) {
       let nickname
       if (payload.djSeats.value[djPosition][1].userUuid) {
-        const userProfile = await getUser(payload.djSeats.value[djPosition][1].userUuid)
+        const userProfile = await getTTUser(payload.djSeats.value[djPosition][1].userUuid)
         nickname = userProfile.nickname
       }
       // this.djs.push({
@@ -281,7 +300,17 @@ export class Bot {
 
   stepUp () {
     logger.debug('stepUp')
+    if (this.liveDebug.DJ) {
+      this.publishMessage('requestToBroadcast', {
+        message: `DEBUG: Already DJ = ${this.isDj}. Next Free seat = ${this.findNextFreeDjSeat()}. Next Song = ${this.botPlaylist[0].trackName} by ${this.botPlaylist[0].artistName}`
+      })
+    }
     if (this.isDj) return
+    if (this.botPlaylist[0] === undefined) {
+      return this.publishMessage('requestToBroadcast', {
+        message: 'I haven\'t heard enough songs yet, so I\'m not sure what to play - I need to jam to at least 1 song'
+      })
+    }
     const djSeatKey = this.findNextFreeDjSeat()
     logger.debug(`Found dj seat ${djSeatKey}`)
     const beDjPayload = {

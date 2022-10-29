@@ -35,8 +35,8 @@ function buildProdLogger () {
 
 if (process.env.NODE_ENV === 'development') {
   logger = buildDevLogger()
-  logger.info('Logging in development mode', { env: 'Development' })
+  logger.info(`Logging in development mode ${process.env.LOG_LEVEL}`, { env: 'Development' })
 } else {
   logger = buildProdLogger()
-  logger.info('Logging in production mode')
+  logger.info(`Logging in production mode ${process.env.LOG_LEVEL}`)
 }
