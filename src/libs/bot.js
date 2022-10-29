@@ -101,8 +101,6 @@ export class Bot {
           const method = args[1]
           const mode = args[2]
           this.liveDebug[method] = (mode === 'ON')
-          console.log('method', method, 'mode', mode)
-          console.log(this.liveDebug)
           this.publishMessage('requestToBroadcast', {
             message: `Turned ${mode} debug mode for ${method}`
           })
