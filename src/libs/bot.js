@@ -96,7 +96,7 @@ export class Bot {
         if (!customMessage) return
         const sender = messages[message]?.sender ?? ''
         if (sender === chatConfig.botId || sender === chatConfig.botReplyId) return
-        if (customMessage.substring(0,5) === 'DEBUG') {
+        if (customMessage.substring(0, 5) === 'DEBUG') {
           const args = customMessage.split(' ')
           const method = args[1]
           const mode = args[2]
@@ -104,7 +104,6 @@ export class Bot {
           this.publishMessage('requestToBroadcast', {
             message: `Turned ${mode} debug mode for ${method}`
           })
-      
         }
         const msg = {
           chatMessage: customMessage,
@@ -294,9 +293,11 @@ export class Bot {
 
   stepUp () {
     logger.debug('stepUp')
-    if (this.liveDebug.DJ) this.publishMessage('requestToBroadcast', {
-      message: `DEBUG: Already DJ = ${this.isDj}. Next Free seat = ${this.findNextFreeDjSeat()}. Next Song = ${this.botPlaylist[0].trackName} by ${this.botPlaylist[0].artistName}`
-    })
+    if (this.liveDebug.DJ) {
+      this.publishMessage('requestToBroadcast', {
+        message: `DEBUG: Already DJ = ${this.isDj}. Next Free seat = ${this.findNextFreeDjSeat()}. Next Song = ${this.botPlaylist[0].trackName} by ${this.botPlaylist[0].artistName}`
+      })
+    }
     if (this.isDj) return
     if (this.botPlaylist[0] === undefined) {
       return this.publishMessage('requestToBroadcast', {
