@@ -301,8 +301,12 @@ export class Bot {
   stepUp () {
     logger.debug('stepUp')
     if (this.liveDebug.DJ) {
+      let nextSong = 'not known'
+      if (this.botPlaylist[0]?.trackName && this.botPlaylist[0]?.artistName) {
+        nextSong = `${this.botPlaylist[0]?.trackName} by ${this.botPlaylist[0]?.artistName}`
+      }
       this.publishMessage('requestToBroadcast', {
-        message: `DEBUG: Already DJ = ${this.isDj}. Next Free seat = ${this.findNextFreeDjSeat()}. Next Song = ${this.botPlaylist[0].trackName} by ${this.botPlaylist[0].artistName}`
+        message: `DEBUG: Already DJ = ${this.isDj}. Next Free seat = ${this.findNextFreeDjSeat()}. Next Song is ${nextSong}`
       })
     }
     if (this.isDj) return
