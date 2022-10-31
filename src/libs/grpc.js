@@ -1,14 +1,10 @@
-import grpc from '@grpc/grpc-js'
-import protoLoader from '@grpc/proto-loader'
+import { clientCreds, users } from '@whatagoodbot/rpc'
 
-const packageDefinition = protoLoader.loadSync('./src/protos/user.proto')
-
-const userProto = grpc.loadPackageDefinition(packageDefinition)
-const userService = new userProto.Users(`${process.env.USERS_SERVICE}:50051`, grpc.credentials.createInsecure())
+const userService = new users.Users(`${process.env.USERS_SERVICE}:50051`, clientCreds)
 
 export const getUser = id => {
   return new Promise(resolve => {
-    userService.getUserDetails({ id }, (error, response) => {
+    userService.getUser({ id }, (error, response) => {
       if (error) console.log(error)
       resolve(response)
     })
