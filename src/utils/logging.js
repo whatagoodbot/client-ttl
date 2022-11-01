@@ -22,7 +22,7 @@ function buildProdLogger () {
   return createLogger({
     level: process.env.LOG_LEVEL || 'warn',
     format: combine(timestamp(), errors({ stack: true }), json()),
-    defaultMeta: { service: process.env.npm_package_name },
+    defaultMeta: { service: 'RVRB' },
     transports: [
       new transports.Syslog({
         host: process.env.SYSLOG_HOST,

@@ -2,7 +2,6 @@ import { EventEmitter } from 'node:events'
 
 import broker from 'message-broker'
 import { logger } from '../utils/logging.js'
-import { postMessage } from './cometchat.js'
 
 const topicPrefix = `${process.env.NODE_ENV}/`
 
@@ -21,6 +20,7 @@ const subscribe = () => {
 }
 
 export const recievedCommand = new EventEmitter()
+export const recievedMessage = new EventEmitter()
 
 if (broker.client.connected) {
   subscribe()
@@ -31,10 +31,10 @@ if (broker.client.connected) {
 broker.client.on('message', async (topic, payload) => {
   try {
     const message = JSON.parse(payload.toString())
-    if (message?.client !== process.env.npm_package_name) return
+    if (message?.client !== 'RVRB') return
     if (topic === `${topicPrefix}broadcast`) {
-      receiveBroadcast(message)
-    } else if (topic === `${topicPrefix}externalRequest` && message.service === process.env.npm_package_name) {
+      recievedMessage.emit('externalMessage', message)
+    } else if (topic === `${topicPrefix}externalRequest` && message.service === 'RVRB') {
       recievedCommand.emit('externalRequest', message)
     }
   } catch (error) {
@@ -48,13 +48,6 @@ broker.client.on('error', (err) => {
   })
 })
 
-const receiveBroadcast = async (data) => {
-  const validatedBroadcastMessage = broker.broadcast.validate(data)
-  if (validatedBroadcastMessage.errors) return
-  // data.room.id = '9d2d87a4-a515-424f-ba27-11b9878c64eb' //good bot test
-  // data.room.id = '8fe23fc9-c002-4ff5-bc19-36cb03915f71' // nabs test
-  postMessage(data)
-}
 export const publish = (topic, request) => {
   const validatedRequest = broker[topic].validate(request)
   if (validatedRequest.errors) console.log(validatedRequest.errors)

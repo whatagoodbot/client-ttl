@@ -4,7 +4,7 @@ const StatsD = require('hot-shots')
 
 const client = new StatsD({
   host: process.env.STATSD_HOST,
-  globalTags: { bucket: process.env.STATSD_BUCKET, system: process.env.npm_package_name, env: process.env.NODE_ENV },
+  globalTags: { bucket: process.env.STATSD_BUCKET, system: 'RVRB', env: process.env.NODE_ENV },
   telegraf: true
 })
 

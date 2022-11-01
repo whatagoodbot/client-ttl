@@ -7,6 +7,7 @@ export default (knex) => {
     },
     getAll: async () => {
       return await knex('rooms')
+        .where({ enabled: true })
     }
   }
 }

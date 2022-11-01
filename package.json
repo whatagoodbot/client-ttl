@@ -1,33 +1,24 @@
 {
-  "name": "goodbot-ttl",
-  "version": "3.2.0",
-  "description": "A bot to interact with users in chat on tt.live",
+  "name": "client-rvrb",
+  "version": "0.0.1",
+  "description": "A bot to interact with users in chat on RVRB",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "debug": "FULLDEBUG=true NODE_ENV=production nodemon -r dotenv/config src/index.js",
     "dev": "NODE_ENV=development nodemon -r dotenv/config src/index.js",
     "prod": "NODE_ENV=production nodemon -r dotenv/config src/index.js",
-    "container": "node -r dotenv/config src/index.js",
-    "nooutput": "NO_OUTPUT=true nodemon -r dotenv/config src/index.js",
     "lint": "standard",
     "lint:fix": "standard --fix",
     "start": "node src/index.js",
-    "test": "npm run lint && nyc --reporter=html --reporter=text mocha",
-    "knex:migrate": "node -r dotenv/config ./node_modules/knex/bin/cli.js migrate:latest",
-    "knex:migrate:make": "node -r dotenv/config ./node_modules/knex/bin/cli.js migrate:make $1",
-    "knex:migrate:down": "node -r dotenv/config ./node_modules/knex/bin/cli.js migrate:down"
+    "test": "npm run lint && nyc --reporter=html --reporter=text mocha"
   },
   "repository": {
     "type": "git",
-    "url": "git@github-whatagoodbot:whatagoodbot/goodBot-ttl.git"
+    "url": "git@github-whatagoodbot:whatagoodbot/client-rvrb.git"
   },
   "keywords": [
     "bot",
-    "ttlive",
-    "ttl",
-    "tt.live",
-    "turntable"
+    "rvrb"
   ],
   "standard": {
     "env": [
@@ -47,18 +38,9 @@
   "dependencies": {
     "@whatagoodbot/rpc": "^1.0.6",
     "hot-shots": "^9.2.0",
-    "knex": "^2.3.0",
     "message-broker": "github:whatagoodbot/message-broker#v3.0.0",
-    "mysql": "^2.18.1",
-    "node-fetch": "^3.2.10",
-    "repeat": "^2.0.4",
-    "simple-lastfm": "^1.0.6",
-    "socket.io-client": "^4.5.2",
-    "spotify-web-api-node": "^5.0.2",
     "uuid": "^9.0.0",
     "winston": "^3.8.2",
-    "winston-elasticsearch": "^0.17.1",
-    "winston-syslog": "^2.6.0",
-    "youtube-search": "^1.1.6"
+    "winston-syslog": "^2.6.0"
   }
 }
