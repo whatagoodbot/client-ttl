@@ -51,7 +51,8 @@ export class Bot {
         slug: this.room.slug,
         name: this.room.name,
         lastfm: this.room.lastfm,
-        spotify: this.room.spotify
+        spotify: this.room.spotify,
+        commandIdentifiers: this.room.commandIdentifiers
       },
       user: {
         id: userId,
