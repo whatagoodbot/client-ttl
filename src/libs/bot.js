@@ -18,10 +18,12 @@ export class Bot {
       DJ: false
     }
     this.lastMessageIDs = {}
+    this.botConfig = JSON.parse(roomConfig.botConfig)
     this.room = {
       slug: roomConfig.slug,
       lastfm: JSON.parse(roomConfig.lastfm),
-      spotify: JSON.parse(roomConfig.spotify)
+      spotify: JSON.parse(roomConfig.spotify),
+      commandIdentifiers: this.botConfig.commandIdentifiers
     }
     this.debug = debug
     this.nowPlaying = {
