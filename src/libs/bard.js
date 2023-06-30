@@ -9,7 +9,7 @@ globalThis.fetch = fetch
 const questionPrefix = `Assume you are a big fan of ${process.env.FAVOURITE_ARTIST} and answer this question.`
 const trackPrefix = 'tell me about the song'
 
-const cache = createClient({url: `redis://${process.env.REDIS_HOST}:6379`})
+const cache = createClient({ url: `redis://${process.env.REDIS_HOST}:6379` })
 cache.on('error', err => console.log('Redis Client Error', err))
 await cache.connect()
 await Bard.init(process.env.BARD_COOKIE)
