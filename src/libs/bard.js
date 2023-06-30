@@ -15,7 +15,6 @@ await cache.connect()
 await Bard.init(process.env.BARD_COOKIE)
 
 const getResponse = async (cacheKey, prefix, query, room) => {
-  console.log(prefix, query)
   const cachedResult = await cache.get(cacheKey)
   if (cachedResult) return JSON.parse(cachedResult).content
   if (room) {
