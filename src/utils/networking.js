@@ -18,8 +18,8 @@ export const makeRequest = async (url, options, extraHeaders) => {
     },
     ...options
   }
-  const response = await fetch(url.href, requestOptions)
-  const responsePayload = await response.json()
-
-  return responsePayload
+  try {
+    const response = await fetch(url.href, requestOptions)
+    return await response.json()
+  } catch (error) {}
 }

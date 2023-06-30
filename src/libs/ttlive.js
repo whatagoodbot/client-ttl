@@ -1,10 +1,11 @@
 import { buildUrl, makeRequest } from '../utils/networking.js'
-import { configDb } from '../models/index.js'
-const configName = 'ttlive'
 
-const getHeaders = (config) => {
+const userHost = 'api.prod.tt.fm'
+const roomHost = 'rooms.prod.tt.fm'
+
+const getHeaders = () => {
   return {
-    authorization: 'Bearer ' + config.token,
+    authorization: 'Bearer ' + process.env.TTL_USER_TOKEN,
     dnt: 1,
     origin: 'https://tt.live',
     referer: 'https://tt.live/'
@@ -12,78 +13,88 @@ const getHeaders = (config) => {
 }
 
 export const getTTUser = async (userId) => {
-  const config = await configDb.get(configName)
   const paths = [
     'profile',
     userId
   ]
-  const headers = getHeaders(config)
-  headers.authority = config.userHost
+  const headers = getHeaders()
+  headers.authority = userHost
 
-  const url = buildUrl(config.userHost, paths)
+  const url = buildUrl(userHost, paths)
   const response = await makeRequest(url, { headers })
   return response
 }
 
 export const getRoom = async (slug) => {
-  const config = await configDb.get(configName)
   const paths = [
     'rooms',
     slug
   ]
-  const headers = getHeaders(config)
-  headers.authority = config.roomHost
+  const headers = getHeaders()
+  headers.authority = roomHost
 
-  const url = buildUrl(config.roomHost, paths)
+  const url = buildUrl(roomHost, paths)
   const response = await makeRequest(url, { headers })
   return response
 }
 
 export const pinMessage = async (slug, message) => {
-  const chatConfig = await configDb.get('cometchat')
-  const config = await configDb.get(configName)
   const paths = [
     'rooms',
     slug,
     'pinned-messages'
   ]
-  const headers = getHeaders(config)
-  headers.authority = config.roomHost
+  const headers = getHeaders()
+  headers.authority = roomHost
   let body = { pinnedMessages: [] }
   if (message) {
     body = {
       pinnedMessages: [{
         message: {
           message,
-          userName: chatConfig.avatar.name,
-          avatarId: chatConfig.avatar.id,
-          color: chatConfig.avatar.colour,
-          userUuid: chatConfig.botId,
+          userName: process.env.CHAT_NAME,
+          avatarId: process.env.CHAT_AVATAR_ID,
+          color: `#${process.env.CHAT_COLOUR}`,
+          userUuid: process.env.CHAT_USER_ID,
           date: new Date(),
           retryButton: false,
           reactions: {},
-          pinnedByName: chatConfig.avatar.name,
-          pinnedByUUID: chatConfig.botId
+          pinnedByName: process.env.CHAT_NAME,
+          pinnedByUUID: process.env.CHAT_USER_ID
         }
       }]
     }
   }
-  const url = buildUrl(config.roomHost, paths)
+  const url = buildUrl(roomHost, paths)
   const response = await makeRequest(url, { method: 'POST', body: JSON.stringify(body) }, headers)
   return response
 }
 
 export const joinRoom = async slug => {
-  const config = await configDb.get(configName)
   const paths = [
     'rooms',
     slug,
     'join'
   ]
-  const headers = getHeaders(config)
-  headers.authority = config.roomHost
+  const headers = getHeaders()
+  headers.authority = roomHost
 
-  const url = buildUrl(config.roomHost, paths)
-  const response = await makeRequest(url, { headers, method: 'POST' })
-  return response
+  const url = buildUrl(roomHost, paths)
+  return await makeRequest(url, { headers, method: 'POST' })
 }
+
+export const joinChatRoom = async roomId => {
+  const paths = [
+    'roomUserRoles',
+    'cometchat',
+    'join',
+    roomId
+  ]
+  const headers = getHeaders()
+  headers.authority = roomHost
+
+  const url = buildUrl(roomHost, paths)
+  return await makeRequest(url, { headers, method: 'POST' })
+}
+
+

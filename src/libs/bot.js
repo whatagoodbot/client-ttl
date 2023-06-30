@@ -1,31 +1,16 @@
 import { io } from 'socket.io-client'
-import { v4 as uuidv4 } from 'uuid'
 
 import { joinChat, getMessages } from './cometchat.js'
-import { getRoom, joinRoom, getTTUser } from './ttlive.js'
-import { configDb } from '../models/index.js'
+import { getRoom, joinRoom, joinChatRoom, getTTUser } from './ttlive.js'
 import { logger } from '../utils/logging.js'
-import { publish, recievedCommand } from './messages.js'
-import { delay } from '../utils/timing.js'
-import { getUser } from './grpc.js'
-
-const chatConfig = await configDb.get('cometchat')
+import { handlers } from '../handlers/index.js'
 
 export class Bot {
-  constructor (roomConfig, debug = false) {
-    this.roomConfig = roomConfig
-    this.liveDebug = {
-      DJ: false
-    }
+  constructor (slug) {
     this.lastMessageIDs = {}
-    this.botConfig = JSON.parse(roomConfig.botConfig)
     this.room = {
-      slug: roomConfig.slug,
-      lastfm: JSON.parse(roomConfig.lastfm),
-      spotify: JSON.parse(roomConfig.spotify),
-      commandIdentifiers: this.botConfig.commandIdentifiers
+      slug: slug
     }
-    this.debug = debug
     this.nowPlaying = {
       dj: '',
       id: '',
@@ -37,33 +22,7 @@ export class Bot {
     this.isDj = false
     this.lastPlayed = []
     this.botPlaylist = []
-  }
-
-  async publishMessage (topic, message, userId = chatConfig.botId, sender = 'system') {
-    const userProfile = await getTTUser(userId)
-    if (!userProfile.nickname) return
-    publish(topic, {
-      ...message,
-      messageId: uuidv4(),
-      client: process.env.npm_package_name,
-      room: {
-        id: this.room.id,
-        slug: this.room.slug,
-        name: this.room.name,
-        lastfm: this.room.lastfm,
-        spotify: this.room.spotify,
-        commandIdentifiers: this.room.commandIdentifiers
-      },
-      user: {
-        id: userId,
-        nickname: userProfile.nickname
-      },
-      sender,
-      nowPlaying: this.nowPlaying,
-      djs: this.djs
-    })
-    logger.debug(`Published ${topic}`)
-    if (process.env.FULLDEBUG) console.log(message)
+    this.debug = true
   }
 
   async connect () {
@@ -85,67 +44,31 @@ export class Bot {
       reconnection: true
     })
 
-    joinChat(this.roomId)
+    await joinChat(this.room.id)
     logger.debug(`Joining ${this.room.slug}: ${this.room.id}`)
     await joinRoom(this.room.slug)
+    await joinChatRoom(this.room.id)
   }
 
   async processNewMessages () {
     const response = await getMessages(this.room.id, this.lastMessageIDs?.fromTimestamp)
-    const messages = response.data
-    if (messages?.length) {
-      for (const message in messages) {
-        this.lastMessageIDs.fromTimestamp = messages[message].sentAt + 1
-        const customMessage = messages[message]?.data?.customData?.message ?? ''
-        if (!customMessage) return
-        const sender = messages[message]?.sender ?? ''
-        if (sender === chatConfig.botId || sender === chatConfig.botReplyId) return
-        if (customMessage.substring(0, 5) === 'DEBUG') {
-          const senderConfig = await getUser(sender)
-          if (!senderConfig?.admin) {
-            return this.publishMessage('requestToBroadcast', {
-              message: 'You\'re not the boss of me'
-            })
-          }
-          const args = customMessage.split(' ')
-          const method = args[1]
-          const mode = args[2]
-          this.liveDebug[method] = (mode === 'ON')
-          this.publishMessage('requestToBroadcast', {
-            message: `Turned ${mode} debug mode for ${method}`
+    if (response?.data) {
+      const messages = response.data
+      if (messages?.length) {
+        for (const message in messages) {
+          this.lastMessageIDs.fromTimestamp = messages[message].sentAt + 1
+          const customMessage = messages[message]?.data?.customData?.message ?? ''
+          if (!customMessage) return
+          const sender = messages[message]?.sender ?? ''
+          if ([process.env.CHAT_USER_ID, process.env.CHAT_REPLY_ID].includes(sender)) return
+          handlers.message({
+            message: customMessage,
+            room: this.room,
+            sender
           })
         }
-        const msg = {
-          chatMessage: customMessage,
-          room: this.room.slug,
-          sender
-        }
-        this.publishMessage('chatMessage', msg, sender, sender)
       }
     }
-  }
-
-  async startConnectionHandler (payload) {
-    if (!payload.userUuid) return
-    if (payload.userUuid === chatConfig.botId) return
-    const userProfile = await getTTUser(payload.userUuid)
-
-    this.publishMessage('userConnect', {}, payload.userUuid)
-
-    if (userProfile?.badges && userProfile?.badges.length) {
-      await delay(250)
-      const msg = {
-        key: userProfile?.badges[0],
-        category: 'badgeReaction'
-      }
-      this.publishMessage('responseRead', msg, payload.userUuid)
-    }
-  }
-
-  userWasDisconnectedHandler (payload) {
-    if (!payload.userUuid) return
-    if (payload.userUuid === chatConfig.botId) return
-    this.publishMessage('userDisconnect', {}, payload.userUuid)
   }
 
   trackLastPlayed (trackID) {
@@ -195,7 +118,6 @@ export class Bot {
     }
   }
 
-  // TODO: deal with themes
   async takeDjSeatHandler (payload) {
     logger.debug('takeDjSeatHandler')
     let nickname = null
@@ -212,7 +134,6 @@ export class Bot {
     logger.debug('Next DJ Slot', this.findNextFreeDjSeat())
   }
 
-  // TODO: deal with themes
   leaveDjSeatHandler (payload) {
     logger.debug('leaveDjSeatHandler')
     this.djs = this.djs.filter(
@@ -288,11 +209,11 @@ export class Bot {
 
   configureListeners () {
     logger.debug('Setting up listeners')
-    recievedCommand.on('externalRequest', this.externalCommandHandler.bind(this))
     this.socket.on('sendInitialState', this.sendInitialStateHandler.bind(this))
-    this.socket.on('startConnection', this.startConnectionHandler.bind(this))
-    this.socket.on('userWasDisconnected', this.userWasDisconnectedHandler.bind(this))
-    this.socket.on('playNextSong', this.playNextSongHandler.bind(this))
+    this.socket.on('addAvatarToDancefloor', payload => { handlers.userJoined(payload, this.room) })
+    this.socket.on('startConnection', payload => { handlers.userJoined(payload, this.room) })
+    this.socket.on('userWasDisconnected', payload => { handlers.userLeft(payload, this.room) })
+    this.socket.on('playNextSong', payload => { handlers.songPlayed(payload, this.room) })
     this.socket.on('sendSatisfaction', this.sendSatisfactionHandler.bind(this))
     this.socket.on('addOneTimeAnimation', this.addOneTimeAnimationHandler.bind(this))
     this.socket.on('takeDjSeat', this.takeDjSeatHandler.bind(this))

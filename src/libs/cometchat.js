@@ -1,13 +1,11 @@
 import { v4 as uuidv4 } from 'uuid'
 import { buildUrl, makeRequest } from '../utils/networking.js'
-import { configDb } from '../models/index.js'
 
-const config = await configDb.get('cometchat')
 const startTimeStamp = Math.floor(Date.now() / 1000)
 
 const headers = {
-  appid: config.apiKey,
-  authtoken: config.chatAuthToken,
+  appid: process.env.CHAT_API_KEY,
+  authtoken: process.env.CHAT_TOKEN,
   dnt: 1,
   origin: 'https://tt.live',
   referer: 'https://tt.live/',
@@ -15,40 +13,37 @@ const headers = {
 }
 
 export const joinChat = async (roomId) => {
-  headers.appid = config.apiKey
+  headers.appid = process.env.CHAT_API_KEY
   const paths = [
-    config.version,
+    'v3.0',
     'groups',
     roomId,
     'members'
   ]
 
-  const url = buildUrl(`${config.apiKey}.apiclient-${config.region}.${config.hostname}`, paths)
+  const url = buildUrl(`${process.env.CHAT_API_KEY}.apiclient-us.cometchat.io`, paths)
   const response = await makeRequest(url, { headers, method: 'POST' })
   return response
 }
 
 export const postMessage = async (options) => {
-  headers.appid = config.apiKey
+  headers.appid = process.env.CHAT_API_KEY
   const paths = [
-    config.version,
+    'v3.0',
     'messages'
   ]
 
   const customData = {
     message: options.message || '',
-    avatarId: config.avatar.id,
-    userName: config.avatar.name,
-    color: config.avatar.colour,
+    avatarId: process.env.CHAT_AVATAR_ID,
+    userName: process.env.CHAT_NAME,
+    color: `#${process.env.CHAT_COLOUR}`,
     mentions: [],
-    userUuid: config.botId,
-    badges: ['VERIFIED'],
+    userUuid: process.env.CHAT_USER_ID,
+    badges: ['VERIFIED', 'STAFF'],
     id: uuidv4()
   }
-  // Nasty, yes. But backwards compatibility until all moved over to new format
-  if (options.images || options.image) {
-    customData.imageUrls = options.images || [options.image]
-  }
+  if (options.images) customData.imageUrls = options.images
 
   if (options.mentions) {
     customData.mentions = options.mentions.map(mention => {
@@ -59,13 +54,7 @@ export const postMessage = async (options) => {
       }
     })
   }
-  if (options.mention) {
-    customData.mentions = [{
-      start: options.mention.position,
-      userNickname: options.mention.nickname,
-      userUuid: options.mention.userId
-    }]
-  }
+
   const payload = {
     type: 'ChatMessage',
     receiverType: 'group',
@@ -81,8 +70,7 @@ export const postMessage = async (options) => {
     },
     receiver: options.room.id
   }
-  if (process.env.NO_OUTPUT === 'true') return
-  const url = buildUrl(`${config.apiKey}.apiclient-${config.region}.${config.hostname}`, paths)
+  const url = buildUrl(`${process.env.CHAT_API_KEY}.apiclient-us.cometchat.io`, paths)
   const messageResponse = await makeRequest(url, { method: 'POST', body: JSON.stringify(payload) }, headers)
   return {
     message: options.message,
@@ -91,10 +79,10 @@ export const postMessage = async (options) => {
 }
 
 export const getMessages = async (roomId, fromTimestamp = startTimeStamp) => {
-  headers.appid = config.apiKey
+  headers.appid = process.env.CHAT_API_KEY
   const messageLimit = 50
   const paths = [
-    config.version,
+    'v3.0',
     'groups',
     roomId,
     'messages'
@@ -109,7 +97,6 @@ export const getMessages = async (roomId, fromTimestamp = startTimeStamp) => {
     ['sentAt', fromTimestamp],
     ['affix', 'append']
   ]
-  const url = buildUrl(`${config.apiKey}.apiclient-${config.region}.${config.hostname}`, paths, searchParams)
-  const messages = await makeRequest(url, { headers })
-  return messages
+  const url = buildUrl(`${process.env.CHAT_API_KEY}.apiclient-us.cometchat.io`, paths, searchParams)
+  return await makeRequest(url, { headers })
 }
