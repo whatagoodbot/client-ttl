@@ -8,4 +8,3 @@ const repeatedTasks = new Chain()
 repeatedTasks
   .add(() => roomBot.processNewMessages())
   .every(500)
-

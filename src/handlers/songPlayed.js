@@ -5,7 +5,7 @@ export default async (payload, room) => {
   if (payload.song.artistName.toLowerCase().includes(process.env.FAVOURITE_ARTIST.toLowerCase())) {
     const reply = await getTrackFact(`${payload.song.trackName} by ${payload.song.artistName}`)
     await postMessage({
-      room: room,
+      room,
       message: 'Great song. Let me tell you a little about it!'
     })
     const responses = reply.split('\n')
@@ -13,7 +13,7 @@ export default async (payload, room) => {
       const response = responses[item].trim()
       if (response.length > 0) {
         await postMessage({
-          room: room,
+          room,
           message: response
         })
       }

@@ -1,7 +1,6 @@
 import * as winston from 'winston'
 
-const { format, createLogger, transports } = winston.default
-const { timestamp, combine, errors, json } = format
+const { createLogger, transports } = winston.default
 
 export const logger = createLogger({
   level: process.env.LOG_LEVEL || 'info',

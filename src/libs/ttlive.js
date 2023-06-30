@@ -96,5 +96,3 @@ export const joinChatRoom = async roomId => {
   const url = buildUrl(roomHost, paths)
   return await makeRequest(url, { headers, method: 'POST' })
 }
-
-

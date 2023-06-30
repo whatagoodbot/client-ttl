@@ -1,10 +1,10 @@
 import { createClient } from 'redis'
 import fetch from 'node-fetch'
-
-globalThis.fetch = fetch
 import Bard, { askAI } from 'bard-ai'
 import { postMessage } from './cometchat.js'
 import removeMd from 'remove-markdown'
+
+globalThis.fetch = fetch
 
 const questionPrefix = `Assume you are a big fan of ${process.env.FAVOURITE_ARTIST} and answer this question.`
 const trackPrefix = 'tell me about the song'
@@ -41,4 +41,3 @@ export const getTrackFact = async (track) => {
   const cacheKey = `TTL:BARD:TRACK:${track.toUpperCase().trim()}`
   return await getResponse(cacheKey, trackPrefix, track)
 }
-

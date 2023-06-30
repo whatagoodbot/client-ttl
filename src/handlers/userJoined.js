@@ -8,7 +8,7 @@ export default async (payload, room) => {
   postMessage({
     room,
     message: `Welcome @${userProfile.nickname}... feel free to ask me any questions!`,
-    mentions:[{
+    mentions: [{
       position: 8,
       nickname: userProfile.nickname,
       userId: payload.userUuid

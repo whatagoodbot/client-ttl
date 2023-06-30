@@ -9,7 +9,7 @@ export class Bot {
   constructor (slug) {
     this.lastMessageIDs = {}
     this.room = {
-      slug: slug
+      slug
     }
     this.nowPlaying = {
       dj: '',
@@ -77,26 +77,26 @@ export class Bot {
     this.publishMessage('externalRequest', { service: 'spotify-client', name: 'seeds', seedTracks: this.lastPlayed })
   }
 
-  async playNextSongHandler (payload) {
-    if (!payload.song) return
-    if (this.isDj) {
-      const nextTrack = { song: this.botPlaylist[0] }
-      this.socket.emit('sendNextTrackToPlay', nextTrack)
-      this.botPlaylist.shift()
-    }
-    let songId = payload.song?.id
-    this.trackLastPlayed(songId)
-    if (songId.substring(0, 14) === 'spotify:track:') songId = songId.substring(14)
-    this.nowPlaying = {
-      dj: payload.userUuid,
-      id: songId,
-      provider: payload.song.musicProvider,
-      artist: payload.song.artistName,
-      title: payload.song.trackName,
-      isBot: payload.userUuid === chatConfig.botId
-    }
-    this.publishMessage('songPlayed', {}, payload.userUuid)
-  }
+  // async playNextSongHandler (payload) {
+  //   if (!payload.song) return
+  //   if (this.isDj) {
+  //     const nextTrack = { song: this.botPlaylist[0] }
+  //     this.socket.emit('sendNextTrackToPlay', nextTrack)
+  //     this.botPlaylist.shift()
+  //   }
+  //   let songId = payload.song?.id
+  //   this.trackLastPlayed(songId)
+  //   if (songId.substring(0, 14) === 'spotify:track:') songId = songId.substring(14)
+  //   this.nowPlaying = {
+  //     dj: payload.userUuid,
+  //     id: songId,
+  //     provider: payload.song.musicProvider,
+  //     artist: payload.song.artistName,
+  //     title: payload.song.trackName,
+  //     isBot: payload.userUuid === chatConfig.botId
+  //   }
+  //   this.publishMessage('songPlayed', {}, payload.userUuid)
+  // }
 
   sendSatisfactionHandler (payload) {
     const satisfactionMap = {
@@ -222,55 +222,55 @@ export class Bot {
     if (this.debug) this.socket.onAny(this.allHandler.bind(this))
   }
 
-  stepUp () {
-    logger.debug('stepUp')
-    if (this.liveDebug.DJ) {
-      let nextSong = 'not known'
-      if (this.botPlaylist[0]?.trackName && this.botPlaylist[0]?.artistName) {
-        nextSong = `${this.botPlaylist[0]?.trackName} by ${this.botPlaylist[0]?.artistName}`
-      }
-      this.publishMessage('requestToBroadcast', {
-        message: `DEBUG: Already DJ = ${this.isDj}. Next Free seat = ${this.findNextFreeDjSeat()}. Next Song is ${nextSong}`
-      })
-    }
-    if (this.isDj) return
-    if (this.botPlaylist[0] === undefined) {
-      return this.publishMessage('requestToBroadcast', {
-        message: 'I haven\'t heard enough songs yet, so I\'m not sure what to play - I need to jam to at least 1 song'
-      })
-    }
-    const djSeatKey = this.findNextFreeDjSeat()
-    logger.debug(`Found dj seat ${djSeatKey}`)
-    const beDjPayload = {
-      avatarId: chatConfig.avatar.id,
-      djSeatKey,
-      nextTrack: {
-        song: this.botPlaylist[0]
-      },
-      userUuid: chatConfig.botId,
-      isBot: true
-    }
-    this.socket.emit('takeDjSeat', beDjPayload)
-    this.isDj = true
-    const msg = {
-      key: 'djGroupie',
-      category: 'system'
-    }
-    this.publishMessage('responseRead', msg)
-  }
+  // stepUp () {
+  //   logger.debug('stepUp')
+  //   if (this.liveDebug.DJ) {
+  //     let nextSong = 'not known'
+  //     if (this.botPlaylist[0]?.trackName && this.botPlaylist[0]?.artistName) {
+  //       nextSong = `${this.botPlaylist[0]?.trackName} by ${this.botPlaylist[0]?.artistName}`
+  //     }
+  //     this.publishMessage('requestToBroadcast', {
+  //       message: `DEBUG: Already DJ = ${this.isDj}. Next Free seat = ${this.findNextFreeDjSeat()}. Next Song is ${nextSong}`
+  //     })
+  //   }
+  //   if (this.isDj) return
+  //   if (this.botPlaylist[0] === undefined) {
+  //     return this.publishMessage('requestToBroadcast', {
+  //       message: 'I haven\'t heard enough songs yet, so I\'m not sure what to play - I need to jam to at least 1 song'
+  //     })
+  //   }
+  //   const djSeatKey = this.findNextFreeDjSeat()
+  //   logger.debug(`Found dj seat ${djSeatKey}`)
+  //   const beDjPayload = {
+  //     avatarId: chatConfig.avatar.id,
+  //     djSeatKey,
+  //     nextTrack: {
+  //       song: this.botPlaylist[0]
+  //     },
+  //     userUuid: chatConfig.botId,
+  //     isBot: true
+  //   }
+  //   this.socket.emit('takeDjSeat', beDjPayload)
+  //   this.isDj = true
+  //   const msg = {
+  //     key: 'djGroupie',
+  //     category: 'system'
+  //   }
+  //   this.publishMessage('responseRead', msg)
+  // }
 
-  stepDown () {
-    logger.debug('stepDown')
-    this.socket.emit('leaveDjSeat', {
-      userUuid: chatConfig.botId
-    })
-    this.isDj = false
-    const msg = {
-      key: 'djGroupieNoMore',
-      category: 'system'
-    }
-    this.publishMessage('responseRead', msg)
-  }
+  // stepDown () {
+  //   logger.debug('stepDown')
+  //   this.socket.emit('leaveDjSeat', {
+  //     userUuid: chatConfig.botId
+  //   })
+  //   this.isDj = false
+  //   const msg = {
+  //     key: 'djGroupieNoMore',
+  //     category: 'system'
+  //   }
+  //   this.publishMessage('responseRead', msg)
+  // }
 
   findNextFreeDjSeat () {
     logger.debug('findNextFreeDjSeat')
