@@ -1,7 +1,9 @@
 import { postMessage } from '../libs/cometchat.js'
 import { askQuestion } from '../libs/bard.js'
+import { logger } from '../utils/logging.js'
 
 export default async payload => {
+  logger.info({ sender: payload.senderName, message: payload.message })
   if (payload.message.includes(`@${process.env.CHAT_NAME}`)) {
     const reply = await askQuestion(payload.message.replace(`@${process.env.CHAT_NAME}`, ''), payload.room)
     const responses = reply.split('\n')
