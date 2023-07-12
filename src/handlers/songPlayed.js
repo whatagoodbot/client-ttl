@@ -2,7 +2,7 @@ import { postMessage } from '../libs/cometchat.js'
 import { getTrackFact } from '../libs/bard.js'
 
 export default async (payload, room) => {
-  if (payload.song.artistName.toLowerCase().includes(process.env.FAVOURITE_ARTIST.toLowerCase())) {
+  if (payload?.song?.artistName?.toLowerCase().includes(process.env.FAVOURITE_ARTIST.toLowerCase())) {
     const reply = await getTrackFact(`${payload.song.trackName} by ${payload.song.artistName}`)
     await postMessage({
       room,

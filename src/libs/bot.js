@@ -178,16 +178,16 @@ export class Bot {
 
   configureListeners () {
     logger.debug('Setting up listeners')
-    this.socket.on('sendInitialState', this.sendInitialStateHandler.bind(this))
+    // this.socket.on('sendInitialState', this.sendInitialStateHandler.bind(this))
     this.socket.on('addAvatarToDancefloor', payload => { handlers.userJoined(payload, this.room) })
     this.socket.on('startConnection', payload => { handlers.userJoined(payload, this.room) })
-    this.socket.on('userWasDisconnected', payload => { handlers.userLeft(payload, this.room) })
+    // this.socket.on('userWasDisconnected', payload => { handlers.userLeft(payload, this.room) })
     this.socket.on('playNextSong', payload => { handlers.songPlayed(payload, this.room) })
-    this.socket.on('sendSatisfaction', this.sendSatisfactionHandler.bind(this))
-    this.socket.on('addOneTimeAnimation', this.addOneTimeAnimationHandler.bind(this))
-    this.socket.on('takeDjSeat', this.takeDjSeatHandler.bind(this))
-    this.socket.on('leaveDjSeat', this.leaveDjSeatHandler.bind(this))
-    this.socket.on('wrongMessagePayload', this.wrongMessagePayloadHandler.bind(this))
+    // this.socket.on('sendSatisfaction', this.sendSatisfactionHandler.bind(this))
+    // this.socket.on('addOneTimeAnimation', this.addOneTimeAnimationHandler.bind(this))
+    // this.socket.on('takeDjSeat', this.takeDjSeatHandler.bind(this))
+    // this.socket.on('leaveDjSeat', this.leaveDjSeatHandler.bind(this))
+    // this.socket.on('wrongMessagePayload', this.wrongMessagePayloadHandler.bind(this))
     if (this.debug) this.socket.onAny(this.allHandler.bind(this))
   }
 }
