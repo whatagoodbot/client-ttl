@@ -18,8 +18,7 @@ export const init = async (sessionID) => {
 
   /*
     Removed Cookies
-        _ga_WC57KJ50ZZ=GS1.1.1689229550.1.1.1689230369.0.0.0; SIDCC=APoG2W-kDBuTfFazBxO1_Kixg6dhLHNnA242mCG70GvIrBCJdSWa_qK8nq1x0BwI7us9ClQp-Ts;
-        THIS IS THE PROBLEM CHILD: __Secure-ENID=13.SE=WFDvpErbGwKh_5V0_4I1_VAdPaHQjsdWb50P-tg5GTrR2bdWLoiXj3WUgqHoO5LryETVsSVVPypE-NTccXUp07--Ba6J13u0ZsyPg8PLzpUAEvxUIPeKQkG_dUHbTrVd7yXRFZGUrxxuc9SPiPB9vkQqSQ-2FYaVlJyciF6OVdUCoAk6eKBbvXlXnRozogqs5nTkKri2h-28Ziga-qbSwj_JrN5AX_wa58rWO4TMo2xvyId6OOVrgFtbFiPfksDqIoL5cp27bCLFNaO-_mzAHw;
+        THIS IS THE PROBLEM CHILD: __Secure-ENID
     */
   const response = await fetch('https://bard.google.com/', {
     method: 'GET',
