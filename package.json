@@ -1,6 +1,6 @@
 {
   "name": "goodbot-ttl",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "A bot to interact with users in chat on tt.live",
   "main": "src/index.js",
   "type": "module",
@@ -38,7 +38,7 @@
     "standard": "^17.0.0"
   },
   "dependencies": {
-    "bard-ai": "^1.4.2",
+    "bard-ai": "^1.5.1",
     "node-fetch": "^3.2.10",
     "redis": "^4.6.7",
     "remove-markdown": "^0.5.0",

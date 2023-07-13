@@ -1,6 +1,6 @@
 import { createClient } from 'redis'
 import fetch from 'node-fetch'
-import Bard, { askAI } from 'bard-ai'
+import Bard, { askAI } from './bardAi_module.js'
 import { postMessage } from './cometchat.js'
 import removeMd from 'remove-markdown'
 
@@ -12,7 +12,12 @@ const trackPrefix = 'tell me about the song'
 const cache = createClient({ url: `redis://${process.env.REDIS_HOST}:6379` })
 cache.on('error', err => console.log('Redis Client Error', err))
 await cache.connect()
-await Bard.init(process.env.BARD_COOKIE)
+let aiCommand = askAI
+try {
+  await Bard.init(process.env.BARD_COOKIE)
+} catch (error) {
+  aiCommand = gptGet
+}
 
 const getResponse = async (cacheKey, prefix, query, room) => {
   const cachedResult = await cache.get(cacheKey)
@@ -23,7 +28,7 @@ const getResponse = async (cacheKey, prefix, query, room) => {
       message: 'Hmmm... let me think about that.'
     })
   }
-  const result = await askAI(`${prefix} ${query}`, true)
+  const result = await aiCommand(`${prefix} ${query}`, true)
   if (result.content) {
     result.content = removeMd(result.content)
   }
