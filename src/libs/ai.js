@@ -36,20 +36,16 @@ const getResponse = async (cacheKey, prefix, query, room) => {
       if (result.content) {
         result.content = removeMd(result.content)
         await cache.set(cacheKey, JSON.stringify(result))
+        return result.content
       }
     } catch (error) {
       if (!room) return
-      result = {
-        content: 'Sorry, something went wrong trying to get a response for you'
-      }
+      return 'Sorry, something went wrong trying to get a response for you'
     }
   } else {
     // Open AI to the rescue
-    result = {
-      content: await gptGet(prefix, query)
-    }
+    return await gptGet(prefix, query)
   }
-  return result.content
 }
 
 export const askQuestion = async (question, room) => {

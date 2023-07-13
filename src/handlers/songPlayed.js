@@ -12,18 +12,20 @@ export default async (payload, room) => {
         messageSuffix = process.env.MERCH_MESSAGE_RANDOM
       }
     }
-    await postMessage({
-      room,
-      message: `Great song. Let me tell you a little about it! ${messageSuffix}`
-    })
-    const responses = reply.split('\n')
-    for (const item in responses) {
-      const response = responses[item].trim()
-      if (response.length > 0) {
-        await postMessage({
-          room,
-          message: response
-        })
+    if (reply?.length > 0) {
+      await postMessage({
+        room,
+        message: `Great song. Let me tell you a little about it! ${messageSuffix}`
+      })
+      const responses = reply.split('\n')
+      for (const item in responses) {
+        const response = responses[item].trim()
+        if (response.length > 0) {
+          await postMessage({
+            room,
+            message: response
+          })
+        }
       }
     }
   }
