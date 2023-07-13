@@ -5,7 +5,7 @@ export default async (payload, room) => {
   if (!payload.userUuid) return
   if ([process.env.CHAT_USER_ID, process.env.CHAT_REPLY_ID].includes(payload.userUuid)) return
   const userProfile = await getTTUser(payload.userUuid)
-  if (userProfile.nickname.length > 0) {
+  if (userProfile?.nickname?.length > 0) {
     postMessage({
       room,
       message: `Welcome @${userProfile.nickname}... feel free to ask me any questions!`,
