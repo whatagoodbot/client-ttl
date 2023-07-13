@@ -31,10 +31,17 @@ const getResponse = async (cacheKey, prefix, query, room) => {
   }
   let result
   if (isBard) {
-    result = await askAI(`${prefix} ${query}`, true)
-    if (result.content) {
-      result.content = removeMd(result.content)
-      await cache.set(cacheKey, JSON.stringify(result))
+    try {
+      result = await askAI(`${prefix} ${query}`, true)
+      if (result.content) {
+        result.content = removeMd(result.content)
+        await cache.set(cacheKey, JSON.stringify(result))
+      }
+    } catch (error) {
+      if (!room) return
+      result = {
+        content: 'Sorry, something went wrong trying to get a response for you'
+      }
     }
   } else {
     // Open AI to the rescue
